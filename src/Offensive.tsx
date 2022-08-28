@@ -16,10 +16,10 @@ export default function Offensive({
       <td className={clsx(jss.text, jss.border)}>{hit}</td>
 
       <td className={clsx(jss.text, jss.border)}>
-        {((crit * 100) / (attack - miss)).toFixed(1)}%
+        {((crit * 100) / (attack - miss) || 0).toFixed(1)}%
       </td>
       <td className={clsx(jss.text, jss.border)}>
-        {((miss * 100) / attack).toFixed(1)}%
+        {((miss * 100) / attack || 0).toFixed(1)}%
       </td>
       <td className={clsx(jss.text, jss.border)}>{heal}</td>
     </>
