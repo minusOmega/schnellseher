@@ -11,9 +11,10 @@ export default function Defensive({
   const jss = useStyles();
   return (
     <>
-      <td className={clsx(jss.text, jss.border)}>{dmged}</td>
-      <td className={clsx(jss.text, jss.border)}>{blocked + parried}</td>
       <td className={clsx(jss.text, jss.border)}>{healed}</td>
+      <td className={clsx(jss.text, jss.border)}>
+        {dmged} ({blocked + parried})
+      </td>
       <td className={clsx(jss.text, jss.border)}>{struck}</td>
       <td className={clsx(jss.text, jss.border)}>
         {((dodged * 100) / (struck + dodged) || 0).toFixed(1)}%

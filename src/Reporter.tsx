@@ -21,16 +21,14 @@ export function Reporter({ data }: { data: string }) {
         <tr>
           <th className={jss.border}></th>
           <th className={jss.border}>Name</th>
-          <th className={jss.border}>Schaden Ausgeteilt</th>
+          <th className={jss.border}>Schaden Ausgeteilt (Abgewehrt)</th>
           <th className={jss.border}>Runden gekämpft</th>
-          <th className={jss.border}>Ausgeteilter Schaden Abgewehrt</th>
           <th className={jss.border}>Treffer</th>
           <th className={jss.border}>Kritisch</th>
           <th className={jss.border}>Verfehlt</th>
           <th className={jss.border}>Heilung Ausgeteilt</th>
-          <th className={jss.border}>Schaden Erhalten</th>
-          <th className={jss.border}>Erhaltener Schaden Abgewehrt</th>
           <th className={jss.border}>Heilung Erhalten</th>
+          <th className={jss.border}>Schaden Erhalten (Abgewehrt)</th>
           <th className={jss.border}>Getroffen</th>
           <th className={jss.border}>Ausgewichen</th>
         </tr>

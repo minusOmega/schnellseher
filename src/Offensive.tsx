@@ -11,13 +11,13 @@ export default function Offensive({
   const jss = useStyles();
   return (
     <>
-      <td className={clsx(jss.text, jss.border)}>{dmg}</td>
+      <td className={clsx(jss.text, jss.border)}>
+        {dmg} ({block + parry})
+      </td>
       <td className={clsx(jss.text, jss.border)}>
         {rounds[0]}-{rounds[rounds.length - 1]}
       </td>
-      <td className={clsx(jss.text, jss.border)}>{block + parry}</td>
       <td className={clsx(jss.text, jss.border)}>{hit}</td>
-
       <td className={clsx(jss.text, jss.border)}>
         {((crit * 100) / (attack - miss) || 0).toFixed(1)}%
       </td>
