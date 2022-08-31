@@ -3,6 +3,7 @@ type Attack = { weapon: string };
 type AuswertungKampf = Attacker & Attack;
 
 export type Offensive = {
+  rounds: number[];
   crit: number;
   dmg: number;
   heal: number;
@@ -98,7 +99,11 @@ export default function reporter(input: string): Report {
       (entry) => entry.participant === participant && entry.weapon === weapon
     );
     const auswertung = data.reduce<Offensive>(
-      (total, { damage, hit, typ, heal, block, parry }) => {
+      (total, { time, damage, hit, typ, heal, block, parry }) => {
+        const [minutes, seconds] = time.split(":");
+        const round = Math.floor(
+          (parseInt(minutes) * 60 + parseInt(seconds)) / 24 + 1
+        );
         let hits = damage !== undefined ? 1 : 0;
         let miss = 0;
         let crit = typ === "krit. Treffer" ? 1 : 0;
@@ -119,6 +124,7 @@ export default function reporter(input: string): Report {
             attack++;
             break;
         }
+        if (!total.rounds.includes(round)) total.rounds.push(round);
         total.crit += crit;
         total.dmg += parseInt(damage) | 0;
         total.heal += parseInt(heal) | 0;
@@ -131,6 +137,7 @@ export default function reporter(input: string): Report {
         return total;
       },
       {
+        rounds: [],
         crit: 0,
         dmg: 0,
         heal: 0,
@@ -157,9 +164,13 @@ export default function reporter(input: string): Report {
       hit,
       miss,
       parry,
+      rounds,
     } = current;
     const entry = total.find((item) => item.participant === participant);
     if (entry) {
+      entry.rounds.push(
+        ...current.rounds.filter((round) => !entry.rounds.includes(round))
+      );
       entry.crit += current.crit;
       entry.dmg += current.dmg;
       entry.heal += current.heal;
@@ -171,6 +182,7 @@ export default function reporter(input: string): Report {
       entry.children.push(current);
     } else {
       total.push({
+        rounds,
         participant,
         attack,
         block,
@@ -188,6 +200,7 @@ export default function reporter(input: string): Report {
         dodged: 0,
         children: [
           {
+            rounds,
             participant,
             weapon,
             attack,

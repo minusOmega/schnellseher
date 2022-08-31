@@ -4,7 +4,7 @@ import { Offensive as OffensiveType } from "./reporter/reporter";
 import { useStyles } from "./Row";
 
 export default function Offensive({
-  data: { dmg, block, parry, hit, crit, attack, miss, heal },
+  data: { rounds, dmg, block, parry, hit, crit, attack, miss, heal },
 }: {
   data: OffensiveType;
 }) {
@@ -12,6 +12,7 @@ export default function Offensive({
   return (
     <>
       <td className={clsx(jss.text, jss.border)}>{dmg}</td>
+      <td className={clsx(jss.text, jss.border)}>{rounds.length}</td>
       <td className={clsx(jss.text, jss.border)}>{block + parry}</td>
       <td className={clsx(jss.text, jss.border)}>{hit}</td>
 

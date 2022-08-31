@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createUseStyles } from "react-jss";
 import { BattleData } from "./BattleData";
 import { Reporter } from "./Reporter";
@@ -25,12 +25,19 @@ export const useStyles = createUseStyles({
 
 function App() {
   const jss = useStyles();
-  const [report, setReport] = useState<string | undefined>();
+  const [report, setReport] = useState<string | undefined>(() => {
+    const stored = sessionStorage.getItem("report");
+    return stored ? JSON.parse(stored) : undefined;
+  });
+  useEffect(
+    () => sessionStorage.setItem("report", JSON.stringify(report)),
+    [report]
+  );
   return (
     <div className={jss.app}>
       <header className={jss.header}>
         <p>Schnellseher</p>
-        <BattleData onChange={(data) => setReport(data)} />
+        <BattleData initial={report} onChange={(data) => setReport(data)} />
       </header>
 
       {report && <Reporter data={report} />}

@@ -21,6 +21,7 @@ export const useStyles = createUseStyles({
 
 export function Row({
   data: {
+    rounds,
     participant,
     children,
     crit,
@@ -54,7 +55,7 @@ export function Row({
         </td>
         <td className={clsx(jss.text, jss.border)}>{participant}</td>
         <Offensive
-          data={{ crit, dmg, heal, hit, miss, attack, block, parry }}
+          data={{ rounds, crit, dmg, heal, hit, miss, attack, block, parry }}
         />
         <Defensive data={{ blocked, dmged, dodged, healed, parried, struck }} />
       </tr>
