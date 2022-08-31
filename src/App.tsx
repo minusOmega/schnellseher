@@ -29,10 +29,10 @@ function App() {
     const stored = sessionStorage.getItem("report");
     return stored ? JSON.parse(stored) : undefined;
   });
-  useEffect(
-    () => sessionStorage.setItem("report", JSON.stringify(report)),
-    [report]
-  );
+  useEffect(() => {
+    if (!report) return;
+    sessionStorage.setItem("report", JSON.stringify(report));
+  }, [report]);
   return (
     <div className={jss.app}>
       <header className={jss.header}>

@@ -47,7 +47,7 @@ export function Row({
 
   return (
     <>
-      <tr>
+      <tr key={participant}>
         <td className={jss.border}>
           <Button onClick={() => setExpand(!expand)}>
             {expand ? "🔺" : "🔻"}
@@ -60,8 +60,8 @@ export function Row({
         <Defensive data={{ blocked, dmged, dodged, healed, parried, struck }} />
       </tr>
       {expand &&
-        children.map((child) => (
-          <tr>
+        children.map((child, index) => (
+          <tr key={child.attack}>
             <td></td>
             <td className={clsx(jss.text, jss.border, jss.children)}>
               {child.weapon}

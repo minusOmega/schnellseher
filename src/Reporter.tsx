@@ -17,23 +17,29 @@ export function Reporter({ data }: { data: string }) {
 
   return (
     <table className={jss.border}>
-      <th className={jss.border}></th>
-      <th className={jss.border}>Name</th>
-      <th className={jss.border}>Schaden Ausgeteilt</th>
-      <th className={jss.border}>Runden gekämpft</th>
-      <th className={jss.border}>Ausgeteilter Schaden Abgewehrt</th>
-      <th className={jss.border}>Treffer</th>
-      <th className={jss.border}>Kritisch</th>
-      <th className={jss.border}>Verfehlt</th>
-      <th className={jss.border}>Heilung Ausgeteilt</th>
-      <th className={jss.border}>Schaden Erhalten</th>
-      <th className={jss.border}>Erhaltener Schaden Abgewehrt</th>
-      <th className={jss.border}>Heilung Erhalten</th>
-      <th className={jss.border}>Getroffen</th>
-      <th className={jss.border}>Ausgewichen</th>
-      {rows.map((row) => (
-        <Row data={row} />
-      ))}
+      <thead>
+        <tr>
+          <th className={jss.border}></th>
+          <th className={jss.border}>Name</th>
+          <th className={jss.border}>Schaden Ausgeteilt</th>
+          <th className={jss.border}>Runden gekämpft</th>
+          <th className={jss.border}>Ausgeteilter Schaden Abgewehrt</th>
+          <th className={jss.border}>Treffer</th>
+          <th className={jss.border}>Kritisch</th>
+          <th className={jss.border}>Verfehlt</th>
+          <th className={jss.border}>Heilung Ausgeteilt</th>
+          <th className={jss.border}>Schaden Erhalten</th>
+          <th className={jss.border}>Erhaltener Schaden Abgewehrt</th>
+          <th className={jss.border}>Heilung Erhalten</th>
+          <th className={jss.border}>Getroffen</th>
+          <th className={jss.border}>Ausgewichen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, index) => (
+          <Row key={index} data={row} />
+        ))}
+      </tbody>
     </table>
   );
 }
