@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import React from "react";
-import { Defensive as DefensiveType } from "./reporter/reporter";
+import { Defensive as DefensiveType } from "../reporter/reporter";
 import { useStyles } from "./Row";
 
 export default function Defensive({

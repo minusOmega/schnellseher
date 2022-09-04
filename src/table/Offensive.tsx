@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import React from "react";
-import { Offensive as OffensiveType } from "./reporter/reporter";
+import Tooltip from "../base/Tooltip";
+import { Offensive as OffensiveType } from "../reporter/reporter";
 import { useStyles } from "./Row";
 
 export default function Offensive({
@@ -15,7 +16,13 @@ export default function Offensive({
         {dmg} ({block + parry})
       </td>
       <td className={clsx(jss.text, jss.border)}>
-        {rounds[0]}-{rounds[rounds.length - 1]}
+        <Tooltip
+          title={
+            <span style={{ whiteSpace: "nowrap" }}>{rounds.join(", ")}</span>
+          }
+        >
+          {rounds[0]}-{rounds[rounds.length - 1]}
+        </Tooltip>
       </td>
       <td className={clsx(jss.text, jss.border)}>{hit}</td>
       <td className={clsx(jss.text, jss.border)}>

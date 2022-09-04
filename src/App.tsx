@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createUseStyles } from "react-jss";
 import { BattleData } from "./BattleData";
-import { Reporter } from "./Reporter";
+import { Reporter } from "./table/Reporter";
 import logo from "./logo.png";
 
 export const useStyles = createUseStyles({

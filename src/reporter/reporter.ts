@@ -168,9 +168,10 @@ export default function reporter(input: string): Report {
     } = current;
     const entry = total.find((item) => item.participant === participant);
     if (entry) {
-      entry.rounds.push(
-        ...current.rounds.filter((round) => !entry.rounds.includes(round))
-      );
+      entry.rounds = [
+        ...entry.rounds,
+        ...current.rounds.filter((round) => !entry.rounds.includes(round)),
+      ].sort((a, b) => a - b);
       entry.crit += current.crit;
       entry.dmg += current.dmg;
       entry.heal += current.heal;

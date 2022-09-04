@@ -3,8 +3,8 @@ import clsx from "clsx";
 import { createUseStyles } from "react-jss";
 import Offensive from "./Offensive";
 import Defensive from "./Defensive";
-import { Participant } from "./reporter/reporter";
-import Button from "./Button";
+import { Participant } from "../reporter/reporter";
+import Button from "../base/Button";
 
 export const useStyles = createUseStyles({
   border: {

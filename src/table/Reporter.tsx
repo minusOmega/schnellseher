@@ -1,7 +1,7 @@
 import React from "react";
 import { createUseStyles } from "react-jss";
 
-import reporter from "./reporter/reporter";
+import reporter from "../reporter/reporter";
 import { Row } from "./Row";
 
 export const useStyles = createUseStyles({
