@@ -7,8 +7,13 @@ import logo from "./logo.png";
 export const useStyles = createUseStyles({
   app: {
     textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+    width: "100vw",
   },
-  header: {
+  nav: {
+    maxHeight: "50vh",
     backgroundImage: `url(${logo})`,
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
@@ -20,6 +25,9 @@ export const useStyles = createUseStyles({
     justifyContent: "center",
     fontSize: "calc(10px + 2vmin)",
     color: "white",
+    "& textarea": {
+      maxWidth: "90vw",
+    },
   },
 });
 
@@ -35,11 +43,10 @@ function App() {
   }, [report]);
   return (
     <div className={jss.app}>
-      <header className={jss.header}>
+      <nav className={jss.nav}>
         <p>Schnellseher</p>
         <BattleData initial={report} onChange={(data) => setReport(data)} />
-      </header>
-
+      </nav>
       {report && <Reporter data={report} />}
     </div>
   );

@@ -1,13 +1,28 @@
 import React from "react";
 import { createUseStyles } from "react-jss";
-
 import reporter from "../reporter/reporter";
 import { Row } from "./Row";
 
 export const useStyles = createUseStyles({
-  border: {
-    border: "1px solid black",
-    padding: 5,
+  "@global": {
+    "th, td": {
+      border: "1px solid black",
+      padding: 5,
+    },
+    table: {
+      height: "100%",
+      display: "grid",
+      gridTemplateColumns: "repeat(12,auto)",
+      gridTemplateAreas: `
+      "expander name dmg rounds hit crit miss heal healed struck dodged"
+      `,
+    },
+    th: { position: "sticky", top: 0, backgroundColor: "white" },
+    "thead, tbody, tr": { display: "contents" },
+    "#tooltip": { gridArea: "rounds" },
+  },
+  container: {
+    overflow: "scroll",
   },
 });
 
@@ -16,28 +31,30 @@ export function Reporter({ data }: { data: string }) {
   const rows = reporter(data);
 
   return (
-    <table className={jss.border}>
-      <thead>
-        <tr>
-          <th className={jss.border}></th>
-          <th className={jss.border}>Name</th>
-          <th className={jss.border}>Schaden Ausgeteilt (Abgewehrt)</th>
-          <th className={jss.border}>Runden gekämpft</th>
-          <th className={jss.border}>Treffer</th>
-          <th className={jss.border}>Kritisch</th>
-          <th className={jss.border}>Verfehlt</th>
-          <th className={jss.border}>Heilung Ausgeteilt</th>
-          <th className={jss.border}>Heilung Erhalten</th>
-          <th className={jss.border}>Schaden Erhalten (Abgewehrt)</th>
-          <th className={jss.border}>Getroffen</th>
-          <th className={jss.border}>Ausgewichen</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, index) => (
-          <Row key={index} data={row} />
-        ))}
-      </tbody>
-    </table>
+    <div className={jss.container}>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Name</th>
+            <th>Schaden Ausgeteilt (Abgewehrt)</th>
+            <th>Runden gekämpft</th>
+            <th>Treffer</th>
+            <th>Kritisch</th>
+            <th>Verfehlt</th>
+            <th>Heilung Ausgeteilt</th>
+            <th>Heilung Erhalten</th>
+            <th>Schaden Erhalten (Abgewehrt)</th>
+            <th>Getroffen</th>
+            <th>Ausgewichen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <Row key={index} data={row} />
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
