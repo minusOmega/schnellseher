@@ -19,7 +19,7 @@ test("combines rounds", () => {
   expect(report[0].children[Spells.Dmg].rounds).toEqual([2, 3]);
 });
 
-test("combines rounds 2", () => {
+test("combines rounds with gaps", () => {
   enum Spells {
     Buff,
     Debuff,
@@ -53,10 +53,24 @@ test("combines rounds 2", () => {
     2:04 Magier zaubert [${Spells[Spells.Buff]}] auf Verbündeter: erfolgreich.
     2:12 Magier [${Spells[Spells.Dmg]}] greift Gegner an: verursacht 84 Schaden.
       `);
-  console.log(JSON.stringify(report, undefined, 3));
   expect(report[0].rounds).toEqual([1, 2, 3, 4, 5, 6]);
   expect(report[0].children[Spells.Buff].rounds).toEqual([1, 2, 6]);
   expect(report[0].children[Spells.Debuff].rounds).toEqual([1, 2, 4]);
   expect(report[0].children[Spells.Heal].rounds).toEqual([1, 3, 5]);
   expect(report[0].children[Spells.Dmg].rounds).toEqual([2, 3, 4, 6]);
+});
+
+test("combines rounds 1...150", () => {
+  enum Spells {
+    Dmg,
+  }
+
+  const report = reporter(`
+    Runde 1
+    0:00 Magier [${Spells[Spells.Dmg]}] greift Gegner an: verursacht 12 Schaden
+    Runde 150
+    59:36 Magier [${Spells[Spells.Dmg]}] greift Gegner an: verursacht 12 Schaden
+      `);
+  expect(report[0].rounds).toEqual([1, 150]);
+  expect(report[0].children[Spells.Dmg].rounds).toEqual([1, 150]);
 });
