@@ -1,4 +1,10 @@
 import React, { useState } from "react";
+import { Button, styled } from "@mui/material";
+
+const Textarea = styled("textarea")({
+  margin: 20,
+  minWidth: 229.9,
+});
 
 export function BattleData({
   initial = "",
@@ -10,13 +16,14 @@ export function BattleData({
   const [report, setReport] = useState<string>(initial);
   return (
     <>
-      <textarea
+      <Textarea
+        placeholder="Kampfbericht hier einfügen"
         onChange={(e) => setReport(e.target.value)}
         defaultValue={report}
       />
-      <button onClick={() => onChange && onChange(report)}>
+      <Button variant="contained" onClick={() => onChange && onChange(report)}>
         Kampfbericht auswerten
-      </button>
+      </Button>
     </>
   );
 }

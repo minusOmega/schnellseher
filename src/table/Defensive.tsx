@@ -1,5 +1,6 @@
 import React from "react";
 import { Defensive as DefensiveType } from "../reporter/reporter";
+import { Cell } from "./Cell";
 
 export default function Defensive({
   data: { blocked, dmged, dodged, healed, parried, struck },
@@ -8,12 +9,12 @@ export default function Defensive({
 }) {
   return (
     <>
-      <td>{healed}</td>
-      <td>
+      <Cell>{healed}</Cell>
+      <Cell>
         {dmged} ({blocked + parried})
-      </td>
-      <td>{struck}</td>
-      <td>{((dodged * 100) / (struck + dodged) || 0).toFixed(1)}%</td>
+      </Cell>
+      <Cell>{struck}</Cell>
+      <Cell>{((dodged * 100) / (struck + dodged) || 0).toFixed(1)}%</Cell>
     </>
   );
 }

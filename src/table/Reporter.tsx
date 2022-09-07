@@ -1,60 +1,64 @@
+import { styled } from "@mui/material";
 import React from "react";
-import { createUseStyles } from "react-jss";
 import reporter from "../reporter/reporter";
-import { Row } from "./Row";
+import { ContentsRow } from "./ContentsRow";
+import { Report } from "./Report";
 
-export const useStyles = createUseStyles({
-  "@global": {
-    "th, td": {
-      border: "1px solid black",
-      padding: 5,
-    },
-    table: {
-      height: "100%",
-      display: "grid",
-      gridTemplateColumns: "repeat(12,auto)",
-      gridTemplateAreas: `
-      "expander name dmg rounds hit crit miss heal healed struck dodged"
-      `,
-    },
-    th: { position: "sticky", top: 0, backgroundColor: "white" },
-    "thead, tbody, tr": { display: "contents" },
-    "#tooltip": { gridArea: "rounds" },
-  },
-  container: {
-    overflow: "scroll",
-  },
+const Table = styled("table")({
+  height: "100%",
+  display: "grid",
+  gridTemplateColumns: "repeat(12,auto)",
+});
+
+const ScrollOverflow = styled("div")({
+  overflow: "scroll",
+});
+
+const Header = styled("thead")({
+  display: "contents",
+});
+
+const Body = styled("tbody")({
+  display: "contents",
+});
+
+const Column = styled("th")({
+  border: "1px solid black",
+  padding: 5,
+  position: "sticky",
+  top: 0,
+  backgroundColor: "white",
+  zIndex: 1,
 });
 
 export function Reporter({ data }: { data: string }) {
-  const jss = useStyles();
-  const rows = reporter(data);
+  const report = reporter(data);
 
   return (
-    <div className={jss.container}>
-      <table>
-        <thead>
-          <tr>
-            <th></th>
-            <th>Name</th>
-            <th>Schaden Ausgeteilt (Abgewehrt)</th>
-            <th>Runden gekämpft</th>
-            <th>Treffer</th>
-            <th>Kritisch</th>
-            <th>Verfehlt</th>
-            <th>Heilung Ausgeteilt</th>
-            <th>Heilung Erhalten</th>
-            <th>Schaden Erhalten (Abgewehrt)</th>
-            <th>Getroffen</th>
-            <th>Ausgewichen</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <Row key={index} data={row} />
+    <ScrollOverflow>
+      <Table>
+        <Header>
+          <ContentsRow>
+            <Column />
+            <Column>Name</Column>
+            <Column>Schaden Ausgeteilt (Abgewehrt)</Column>
+            <Column>Runden gekämpft</Column>
+            <Column>Treffer</Column>
+            <Column>Kritisch</Column>
+            <Column>Verfehlt</Column>
+            <Column>Heilung Ausgeteilt</Column>
+            <Column>Heilung Erhalten</Column>
+            <Column>Schaden Erhalten (Abgewehrt)</Column>
+            <Column>Getroffen</Column>
+            <Column>Ausgewichen</Column>
+          </ContentsRow>
+        </Header>
+        <Body>
+          {report.map((row, index) => (
+            <Report key={index} data={row} />
           ))}
-        </tbody>
-      </table>
-    </div>
+        </Body>
+      </Table>
+    </ScrollOverflow>
   );
 }
