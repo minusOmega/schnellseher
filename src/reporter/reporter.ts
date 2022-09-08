@@ -23,6 +23,19 @@ export type Defensive = {
   dodged: number;
 };
 
+type RegexGroups = {
+  time: string;
+  participant: string;
+  weapon: string;
+  target: string;
+  damage: string;
+  heal: string;
+  hit: string;
+  typ: string;
+  block: string;
+  parry: string;
+};
+
 type WithChildren<A, B> = A & {
   children: B[];
 };
@@ -35,21 +48,17 @@ export type Participant = WithChildren<
 
 export type Report = Participant[];
 
+const getPredecessorIfCaster = (current: RegexGroups, all: RegexGroups[]) => {
+  const position = all.indexOf(current);
+  const predecessor = all[position - 1];
+  const { weapon, target, time } = predecessor;
+  if (weapon !== current.weapon) return undefined;
+  if (target !== current.target) return undefined;
+  if (current.time.localeCompare(time) >= 0) return predecessor;
+};
+
 export default function reporter(input: string): Report {
   const text = input.split("\n");
-  type RegexGroups = {
-    time: string;
-    participant: string;
-    weapon: string;
-    target: string;
-    damage: string;
-    heal: string;
-    hit: string;
-    typ: string;
-    block: string;
-    parry: string;
-  };
-
   const groups: RegexGroups[] = [];
 
   for (let index = 0; index < text.length; index++) {
@@ -70,13 +79,17 @@ export default function reporter(input: string): Report {
   groups
     .filter(({ participant }) => participant === undefined)
     .forEach((element) => {
-      const match = rundenzauber.find(({ time, weapon, target }) => {
-        if (weapon !== element.weapon) return false;
-        if (target !== element.target) return false;
-        return element.time.localeCompare(time) >= 0;
-      });
-      if (match) element.participant = match.participant;
-      else console.log(element);
+      const predecessor = getPredecessorIfCaster(element, groups);
+      if (predecessor) element.participant = predecessor.participant;
+      else {
+        const match = rundenzauber.find(({ time, weapon, target }) => {
+          if (weapon !== element.weapon) return false;
+          if (target !== element.target) return false;
+          return element.time.localeCompare(time) >= 0;
+        });
+        if (match) element.participant = match.participant;
+        else console.log(element);
+      }
     });
 
   const auszuwertender = groups.reduce<AuswertungKampf[]>(

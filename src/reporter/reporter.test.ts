@@ -74,3 +74,31 @@ test("combines rounds 1...150", () => {
   expect(report[0].rounds).toEqual([1, 150]);
   expect(report[0].children[Spells.Dmg].rounds).toEqual([1, 150]);
 });
+
+test("calculates DoT dmg", () => {
+  enum Caster {
+    Wizard,
+    Warlock,
+  }
+
+  const report = reporter(`
+  0:00 ${
+    Caster[Caster.Wizard]
+  } zaubert [Orkan II] auf Horras-Attentäter #1: verfehlt.
+  0:00 ${
+    Caster[Caster.Wizard]
+  } zaubert [Orkan II] auf Horras-Attentäter #2: erfolgreich.
+  0:00 [Orkan II] wirkt auf Horras-Attentäter #2: verursacht 5 Schaden.
+  0:00 ${
+    Caster[Caster.Warlock]
+  } zaubert [Orkan II] auf Horras-Attentäter #1: erfolgreich.
+  0:00 [Orkan II] wirkt auf Horras-Attentäter #1: verursacht 7 Schaden.
+  0:00 ${
+    Caster[Caster.Warlock]
+  } zaubert [Orkan II] auf Horras-Attentäter #2: erfolgreich.
+  0:00 [Orkan II] wirkt auf Horras-Attentäter #2: verursacht 3 Schaden.
+    `);
+
+  expect(report[Caster.Wizard].dmg).toEqual(5);
+  expect(report[Caster.Warlock].dmg).toEqual(10);
+});
