@@ -59,8 +59,8 @@ export function Report({
         <Defensive data={{ blocked, dmged, dodged, healed, parried, struck }} />
       </ContentsRow>
       {expand &&
-        children.map((child) => (
-          <ContentsRow key={child.attack}>
+        children.map((child, index) => (
+          <ContentsRow key={child.participant + child.attack + index}>
             <Cell />
             <Cell>{child.weapon}</Cell>
             <Offensive data={child} />

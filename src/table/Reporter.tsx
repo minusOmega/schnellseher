@@ -55,7 +55,7 @@ export function Reporter({ data }: { data: string }) {
         </Header>
         <Body>
           {report.map((row, index) => (
-            <Report key={index} data={row} />
+            <Report key={row.participant + index} data={row} />
           ))}
         </Body>
       </Table>
