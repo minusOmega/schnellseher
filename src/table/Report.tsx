@@ -8,7 +8,7 @@ import ArrowForwardIosSharpIcon from "@mui/icons-material/ArrowForwardIosSharp";
 import { ContentsRow } from "./ContentsRow";
 import { Cell } from "./Cell";
 
-const Arrow = styled(ArrowForwardIosSharpIcon)<{ expand: boolean }>`
+const Arrow = styled(ArrowForwardIosSharpIcon)<{ expand: number }>`
   ${({ theme, expand }) => `
   cursor: pointer;
   color: ${theme.palette.primary.main};
@@ -46,10 +46,11 @@ export function Report({
 
   return (
     <>
-      <ContentsRow key={participant}>
+      <ContentsRow key={participant + dmg}>
         <Cell>
           <IconButton onClick={() => setExpand(!expand)} size="small">
-            <Arrow expand={expand} />
+            {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+            <Arrow expand={+expand} />
           </IconButton>
         </Cell>
         <Cell>{participant}</Cell>
@@ -60,7 +61,9 @@ export function Report({
       </ContentsRow>
       {expand &&
         children.map((child, index) => (
-          <ContentsRow key={child.participant + child.attack + index}>
+          <ContentsRow
+            key={child.participant + child.attack + child.dmg + index}
+          >
             <Cell />
             <Cell>{child.weapon}</Cell>
             <Offensive data={child} />

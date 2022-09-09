@@ -1,9 +1,13 @@
 import React, { useState } from "react";
-import { Button, styled } from "@mui/material";
+import { Button, IconButton, styled } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const Textarea = styled("textarea")({
-  margin: 20,
+  margin: 5,
   minWidth: 229.9,
+  width: "100%",
+  whiteSpace: "pre",
+  overflowWrap: "normal",
 });
 
 export function BattleData({
@@ -18,12 +22,27 @@ export function BattleData({
     <>
       <Textarea
         placeholder="Kampfbericht hier einfügen"
+        rows={5}
         onChange={(e) => setReport(e.target.value)}
-        defaultValue={report}
+        value={report}
       />
-      <Button variant="contained" onClick={() => onChange && onChange(report)}>
-        Kampfbericht auswerten
-      </Button>
+      <div>
+        <Button
+          variant="contained"
+          onClick={() => onChange && onChange(report)}
+        >
+          Kampfbericht auswerten
+        </Button>
+        <IconButton
+          color="primary"
+          onClick={() => {
+            setReport("");
+            onChange && onChange("");
+          }}
+        >
+          <DeleteIcon />
+        </IconButton>
+      </div>
     </>
   );
 }

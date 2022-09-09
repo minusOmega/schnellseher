@@ -18,7 +18,7 @@ const Nav = styled("nav")({
   backgroundRepeat: "no-repeat",
   backgroundPosition: "center",
   backgroundColor: "#DFCFC9",
-  padding: 20,
+  padding: 5,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -36,16 +36,16 @@ function App() {
     return stored ? JSON.parse(stored) : undefined;
   });
   useEffect(() => {
-    if (!report) return;
+    if (report === undefined) return;
     sessionStorage.setItem("report", JSON.stringify(report));
   }, [report]);
   return (
     <Root>
       <Nav>
-        <p>Schnellseher</p>
         <BattleData initial={report} onChange={(data) => setReport(data)} />
       </Nav>
       {report && <Reporter data={report} />}
+      <h1>Schnellseher</h1>
     </Root>
   );
 }
