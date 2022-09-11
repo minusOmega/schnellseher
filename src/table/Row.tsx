@@ -1,25 +1,13 @@
 import React, { useState } from "react";
-import { styled } from "@mui/material/styles";
 import Offensive from "./Offensive";
 import Defensive from "./Defensive";
 import { Participant } from "../reporter/reporter";
 import { IconButton } from "@mui/material";
-import ArrowForwardIosSharpIcon from "@mui/icons-material/ArrowForwardIosSharp";
 import { ContentsRow } from "./ContentsRow";
 import { Cell } from "./Cell";
+import { ExpanderArrow } from "./ExpanderArrow";
 
-const Arrow = styled(ArrowForwardIosSharpIcon)<{ expand: number }>`
-  ${({ theme, expand }) => `
-  cursor: pointer;
-  color: ${theme.palette.primary.main};
-  transition: ${theme.transitions.create(["transform"], {
-    duration: theme.transitions.duration.standard,
-  })};
-  transform: ${expand ? "rotate(90deg)" : ""};
-  `}
-`;
-
-export function Report({
+export function Row({
   data: {
     rounds,
     participant,
@@ -39,10 +27,12 @@ export function Report({
     parried,
     struck,
   },
+  isExpanded = false,
 }: {
   data: Participant;
+  isExpanded?: boolean;
 }) {
-  const [expand, setExpand] = useState(false);
+  const [expand, setExpand] = useState(isExpanded);
 
   return (
     <>
@@ -50,7 +40,7 @@ export function Report({
         <Cell>
           <IconButton onClick={() => setExpand(!expand)} size="small">
             {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-            <Arrow expand={+expand} />
+            <ExpanderArrow expand={+expand} />
           </IconButton>
         </Cell>
         <Cell>{participant}</Cell>

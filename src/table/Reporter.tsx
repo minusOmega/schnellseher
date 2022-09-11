@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { styled, Badge } from "@mui/material";
+import { styled, Badge, IconButton } from "@mui/material";
 import { ArrowUpward, ArrowDownward, Sort } from "@mui/icons-material";
 import { orderBy } from "lodash";
-import reporter, { Participant } from "../reporter/reporter";
+import reporter, { Participant, Weapon } from "../reporter/reporter";
 import { ContentsRow } from "./ContentsRow";
-import { Report } from "./Report";
+import { Row } from "./Row";
+import { ExpanderArrow } from "./ExpanderArrow";
 
 const Table = styled("table")({
   height: "100%",
@@ -36,6 +37,7 @@ const Column = styled("th")({
 });
 
 type OrderBy = "asc" | "desc";
+// type Iteratee = keyof Participant | ((item: Participant) => string | number);
 
 const FilterArrow = ({ order }: { order?: OrderBy }) => {
   if (order === "asc") return <ArrowUpward />;
@@ -47,17 +49,19 @@ const FilterColumn = ({
   children,
   onChange,
   name,
+  func,
   order,
   pos,
 }: {
   name: keyof Participant;
+  func?: OrderFunc;
   order?: OrderBy;
   pos: number;
-  onChange: (name: keyof Participant) => void;
+  onChange: (name: keyof Participant, order?: OrderFunc) => void;
   children: React.ReactNode;
 }) => {
   return (
-    <Column style={{ cursor: "pointer" }} onClick={() => onChange(name)}>
+    <Column style={{ cursor: "pointer" }} onClick={() => onChange(name, func)}>
       {children}
       <Badge badgeContent={pos + 1} invisible={pos === undefined || pos === 0}>
         <FilterArrow order={order} />
@@ -66,45 +70,52 @@ const FilterColumn = ({
   );
 };
 
+type OrderFunc = (item: Participant | Weapon) => string | number;
+
 type Order = {
   name: keyof Participant;
+  func?: OrderFunc;
   order: OrderBy;
 };
 
 export function Reporter({ data }: { data: string }) {
-  const [filter, setFilter] = useState<Order[]>([]);
+  const [expand, setExpand] = useState(false);
+  const [sort, setSort] = useState<Order[]>([]);
 
-  const changeFilter = (group: keyof Participant) => {
-    const ordered = filter.find(({ name }) => name === group);
-    if (!ordered) setFilter([{ name: group, order: "desc" }]);
+  const changeFilter = (group: keyof Participant, func?: OrderFunc) => {
+    const ordered = sort.find(({ name }) => name === group);
+    if (!ordered) setSort([{ name: group, func, order: "desc" }]);
     else if (ordered?.order === "desc")
-      setFilter([{ name: group, order: "asc" }]);
-    else setFilter([]);
+      setSort([{ name: group, func, order: "asc" }]);
+    else setSort([]);
   };
 
   const filterBy = (
-    name: keyof Participant
+    name: keyof Participant,
+    func?: OrderFunc
   ): {
     name: keyof Participant;
+    func?: OrderFunc;
     order?: OrderBy;
     pos: number;
-    onChange: (name: keyof Participant) => void;
+    onChange: (name: keyof Participant, func?: OrderFunc) => void;
   } => {
     return {
       name,
-      order: filter.find((entry) => entry.name === name)?.order,
-      pos: filter.findIndex((entry) => entry.name === name),
+      func,
+      order: sort.find((entry) => entry.name === name)?.order,
+      pos: sort.findIndex((entry) => entry.name === name),
       onChange: changeFilter,
     };
   };
 
   const report = reporter(data);
-  const iteratees = filter.map(({ name }) => name);
-  const orders = filter.map(({ order }) => order);
-  const sorted = orderBy(
+  const iteratees = sort.map(({ name, func }) => func || name);
+  const orders = sort.map(({ order }) => order);
+  const sorted = orderBy<Participant>(
     report.map(({ children, ...rest }) => ({
       ...rest,
-      children: orderBy(children, iteratees, orders),
+      children: children && orderBy<Weapon>(children, iteratees, orders),
     })),
     iteratees,
     orders
@@ -115,15 +126,34 @@ export function Reporter({ data }: { data: string }) {
       <Table>
         <Header>
           <ContentsRow>
-            <Column />
+            <Column>
+              <IconButton onClick={() => setExpand(!expand)} size="small">
+                {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+                <ExpanderArrow expand={+expand} />
+              </IconButton>
+            </Column>
             <FilterColumn {...filterBy("participant")}>Name</FilterColumn>
             <FilterColumn {...filterBy("dmg")}>
               Schaden Ausgeteilt (Abgewehrt)
             </FilterColumn>
             <Column>Runden gekämpft</Column>
             <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
-            <Column>Kritisch</Column>
-            <Column>Verfehlt</Column>
+            <FilterColumn
+              {...filterBy(
+                "crit",
+                ({ crit, attack, miss }) => (crit * 100) / (attack - miss) || 0
+              )}
+            >
+              Kritisch
+            </FilterColumn>
+            <FilterColumn
+              {...filterBy(
+                "miss",
+                ({ miss, attack }) => (miss * 100) / attack || 0
+              )}
+            >
+              Verfehlt
+            </FilterColumn>
             <FilterColumn {...filterBy("heal")}>
               Heilung Ausgeteilt
             </FilterColumn>
@@ -139,7 +169,11 @@ export function Reporter({ data }: { data: string }) {
         </Header>
         <Body>
           {sorted.map((row) => (
-            <Report key={row.participant} data={row} />
+            <Row
+              key={row.participant + expand}
+              data={row}
+              isExpanded={expand}
+            />
           ))}
         </Body>
       </Table>
