@@ -11,6 +11,7 @@ const Table = styled("table")({
   backgroundColor: "white",
   display: "grid",
   gridTemplateColumns: "repeat(12,auto)",
+  width: "fit-content",
 });
 
 const Header = styled("thead")({
@@ -22,6 +23,7 @@ const Body = styled("tbody")({
 });
 
 const Column = styled("th")({
+  "&:nth-child(2)": { zIndex: 2, left: 0 },
   minHeight: 90,
   alignItems: "flex-start",
   border: "1px solid black",

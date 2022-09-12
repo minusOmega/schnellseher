@@ -4,7 +4,7 @@ import Defensive from "./Defensive";
 import { Participant } from "../reporter/reporter";
 import { IconButton } from "@mui/material";
 import { ContentsRow } from "./ContentsRow";
-import { Cell } from "./Cell";
+import { Cell, Header } from "./Cell";
 import { ExpanderArrow } from "./ExpanderArrow";
 
 export function Row({
@@ -43,7 +43,7 @@ export function Row({
             <ExpanderArrow expand={+expand} />
           </IconButton>
         </Cell>
-        <Cell>{participant}</Cell>
+        <Header>{participant}</Header>
         <Offensive
           data={{ rounds, crit, dmg, heal, hit, miss, attack, block, parry }}
         />
@@ -55,7 +55,7 @@ export function Row({
             key={child.participant + child.attack + child.dmg + index}
           >
             <Cell />
-            <Cell>{child.weapon}</Cell>
+            <Header>{child.weapon}</Header>
             <Offensive data={child} />
             <Cell />
             <Cell />

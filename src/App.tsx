@@ -19,6 +19,8 @@ const Main = styled("div")({
 });
 
 const Nav = styled("nav")({
+  left: 0,
+  position: "sticky",
   maxHeight: "50vh",
   backgroundImage: `url(${logo})`,
   backgroundRepeat: "no-repeat",
