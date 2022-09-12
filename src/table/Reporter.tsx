@@ -8,13 +8,9 @@ import { Row } from "./Row";
 import { ExpanderArrow } from "./ExpanderArrow";
 
 const Table = styled("table")({
-  height: "100%",
+  backgroundColor: "white",
   display: "grid",
   gridTemplateColumns: "repeat(12,auto)",
-});
-
-const ScrollOverflow = styled("div")({
-  overflow: "scroll",
 });
 
 const Header = styled("thead")({
@@ -26,8 +22,10 @@ const Body = styled("tbody")({
 });
 
 const Column = styled("th")({
+  minHeight: 90,
+  alignItems: "flex-start",
   border: "1px solid black",
-  padding: 10,
+  padding: 8,
   display: "flex",
   position: "sticky",
   userSelect: "none",
@@ -122,61 +120,51 @@ export function Reporter({ data }: { data: string }) {
   );
 
   return (
-    <ScrollOverflow>
-      <Table>
-        <Header>
-          <ContentsRow>
-            <Column>
-              <IconButton onClick={() => setExpand(!expand)} size="small">
-                {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-                <ExpanderArrow expand={+expand} />
-              </IconButton>
-            </Column>
-            <FilterColumn {...filterBy("participant")}>Name</FilterColumn>
-            <FilterColumn {...filterBy("dmg")}>
-              Schaden Ausgeteilt (Abgewehrt)
-            </FilterColumn>
-            <Column>Runden gekämpft</Column>
-            <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
-            <FilterColumn
-              {...filterBy(
-                "crit",
-                ({ crit, attack, miss }) => (crit * 100) / (attack - miss) || 0
-              )}
-            >
-              Kritisch
-            </FilterColumn>
-            <FilterColumn
-              {...filterBy(
-                "miss",
-                ({ miss, attack }) => (miss * 100) / attack || 0
-              )}
-            >
-              Verfehlt
-            </FilterColumn>
-            <FilterColumn {...filterBy("heal")}>
-              Heilung Ausgeteilt
-            </FilterColumn>
-            <FilterColumn {...filterBy("healed")}>
-              Heilung Erhalten
-            </FilterColumn>
-            <FilterColumn {...filterBy("dmged")}>
-              Schaden Erhalten (Abgewehrt)
-            </FilterColumn>
-            <FilterColumn {...filterBy("struck")}>Getroffen</FilterColumn>
-            <Column>Ausgewichen</Column>
-          </ContentsRow>
-        </Header>
-        <Body>
-          {sorted.map((row) => (
-            <Row
-              key={row.participant + expand}
-              data={row}
-              isExpanded={expand}
-            />
-          ))}
-        </Body>
-      </Table>
-    </ScrollOverflow>
+    <Table>
+      <Header>
+        <ContentsRow>
+          <Column>
+            <IconButton onClick={() => setExpand(!expand)} size="small">
+              {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+              <ExpanderArrow expand={+expand} />
+            </IconButton>
+          </Column>
+          <FilterColumn {...filterBy("participant")}>Name</FilterColumn>
+          <FilterColumn {...filterBy("dmg")}>
+            Schaden Ausgeteilt (Abgewehrt)
+          </FilterColumn>
+          <Column>Runden gekämpft</Column>
+          <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
+          <FilterColumn
+            {...filterBy(
+              "crit",
+              ({ crit, attack, miss }) => (crit * 100) / (attack - miss) || 0
+            )}
+          >
+            Kritisch
+          </FilterColumn>
+          <FilterColumn
+            {...filterBy(
+              "miss",
+              ({ miss, attack }) => (miss * 100) / attack || 0
+            )}
+          >
+            Verfehlt
+          </FilterColumn>
+          <FilterColumn {...filterBy("heal")}>Heilung Ausgeteilt</FilterColumn>
+          <FilterColumn {...filterBy("healed")}>Heilung Erhalten</FilterColumn>
+          <FilterColumn {...filterBy("dmged")}>
+            Schaden Erhalten (Abgewehrt)
+          </FilterColumn>
+          <FilterColumn {...filterBy("struck")}>Getroffen</FilterColumn>
+          <Column>Ausgewichen</Column>
+        </ContentsRow>
+      </Header>
+      <Body>
+        {sorted.map((row) => (
+          <Row key={row.participant + expand} data={row} isExpanded={expand} />
+        ))}
+      </Body>
+    </Table>
   );
 }

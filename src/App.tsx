@@ -5,10 +5,16 @@ import { Reporter } from "./table/Reporter";
 import logo from "./logo.png";
 
 const Root = styled("div")({
+  background: "linear-gradient( #CBB3A9, #D7C3B9 5%, #E3D6CF 10%)",
   textAlign: "center",
   display: "flex",
   flexDirection: "column",
   height: "100vh",
+  width: "100vw",
+  overflow: "scroll",
+});
+
+const Main = styled("div")({
   width: "100vw",
 });
 
@@ -17,7 +23,6 @@ const Nav = styled("nav")({
   backgroundImage: `url(${logo})`,
   backgroundRepeat: "no-repeat",
   backgroundPosition: "center",
-  backgroundColor: "#DFCFC9",
   padding: 5,
   display: "flex",
   flexDirection: "column",
@@ -44,8 +49,7 @@ function App() {
       <Nav>
         <BattleData initial={report} onChange={(data) => setReport(data)} />
       </Nav>
-      {report && <Reporter data={report} />}
-      <h1>Schnellseher</h1>
+      <Main>{report ? <Reporter data={report} /> : <h1>Schnellseher</h1>}</Main>
     </Root>
   );
 }
