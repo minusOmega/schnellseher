@@ -63,7 +63,7 @@ export default function reporter(input: string): Report {
 
   for (let index = 0; index < text.length; index++) {
     let regex =
-      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})?(?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:(?!versorgt)[a-z]+\s){1,2})(?<target>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})(?:.*?: )(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\().+(?=\sSchaden geblockt\)))|(?<parry>(?<=\)\s\().+(?=\sSchaden pariert\))))?/g;
+      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})?(?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:(?!versorgt)[a-z]+\s){1,2})(?<target>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})(?:.*?: )(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\()\d+(?=\sSchaden geblockt\)\.$))|(?<parry>(?<=\()\d+(?=\sSchaden pariert\)\.$)))?/g;
 
     let match = regex.exec(text[index]);
     if (match?.groups) {
@@ -88,7 +88,10 @@ export default function reporter(input: string): Report {
           return element.time.localeCompare(time) >= 0;
         });
         if (match) element.participant = match.participant;
-        else console.log(element);
+        else
+          console.error(
+            `Cannot find participant for ${JSON.stringify(element)}`
+          );
       }
     });
 
@@ -119,7 +122,8 @@ export default function reporter(input: string): Report {
         );
         let hits = damage !== undefined ? 1 : 0;
         let miss = 0;
-        let crit = typ === "krit. Treffer" ? 1 : 0;
+        let crit =
+          typ === "krit. Treffer" || typ === "exzellenter Treffer" ? 1 : 0;
         let attack = 0;
         switch (hit) {
           case "kein Schaden":
