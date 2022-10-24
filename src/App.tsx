@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
 import { BattleData } from "./BattleData";
-import { Reporter } from "./table/Reporter";
+import Reporter from "./table/Reporter";
 import logo from "./logo.png";
 
 const Root = styled("div")({
@@ -15,7 +15,7 @@ const Root = styled("div")({
 });
 
 const Main = styled("div")({
-  width: "100vw",
+  display: "flex",
 });
 
 const Nav = styled("nav")({
@@ -28,13 +28,14 @@ const Nav = styled("nav")({
   padding: 5,
   display: "flex",
   flexDirection: "column",
-  alignItems: "center",
+  alignItems: "stretch",
   justifyContent: "center",
   fontSize: "calc(10px + 2vmin)",
   color: "white",
-  "& textarea": {
-    maxWidth: "90vw",
-  },
+});
+
+const Header = styled("h1")({
+  width: "100%",
 });
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
     const stored = sessionStorage.getItem("report");
     return stored ? JSON.parse(stored) : undefined;
   });
+
   useEffect(() => {
     if (report === undefined) return;
     sessionStorage.setItem("report", JSON.stringify(report));
@@ -51,7 +53,9 @@ function App() {
       <Nav>
         <BattleData initial={report} onChange={(data) => setReport(data)} />
       </Nav>
-      <Main>{report ? <Reporter data={report} /> : <h1>Schnellseher</h1>}</Main>
+      <Main>
+        {report ? <Reporter data={report} /> : <Header>Schnellseher</Header>}
+      </Main>
     </Root>
   );
 }

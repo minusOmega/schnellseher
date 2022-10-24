@@ -1,20 +1,36 @@
-import React, { useState } from "react";
-import { styled, Badge, IconButton } from "@mui/material";
-import { ArrowUpward, ArrowDownward, Sort } from "@mui/icons-material";
-import { orderBy } from "lodash";
-import reporter, { Participant, Weapon } from "../reporter/reporter";
+import React, { useMemo, useState } from "react";
+import {
+  styled,
+  IconButton,
+  Tooltip,
+  Badge,
+  ToggleButtonGroup,
+  ToggleButton,
+  Paper,
+} from "@mui/material";
+
+import reporter, {
+  OrderBy,
+  OrderFunc,
+  OrderKey,
+  GroupBy,
+  orderReport,
+} from "../reporter/reporter";
 import { ContentsRow } from "./ContentsRow";
+import { ExpanderArrow, Hash } from "./Icons";
+import { ArrowDownward, ArrowUpward, Sort } from "@mui/icons-material";
+import ButtonBarContent from "../ButtonBarContent";
 import { Row } from "./Row";
-import { ExpanderArrow } from "./ExpanderArrow";
 
 const Table = styled("table")({
   backgroundColor: "white",
   display: "grid",
-  gridTemplateColumns: "repeat(12,auto)",
+  gridTemplateColumns: "repeat(11,auto)",
   width: "fit-content",
+  flex: "auto",
 });
 
-const Header = styled("thead")({
+const Head = styled("thead")({
   display: "contents",
 });
 
@@ -23,7 +39,8 @@ const Body = styled("tbody")({
 });
 
 const Column = styled("th")({
-  "&:nth-child(2)": { zIndex: 2, left: 0 },
+  "&:nth-of-type(1)": { flexDirection: "column-reverse" },
+  "&:nth-of-type(2)": { zIndex: 2, left: 0 },
   minHeight: 90,
   alignItems: "flex-start",
   border: "1px solid black",
@@ -35,9 +52,6 @@ const Column = styled("th")({
   backgroundColor: "white",
   zIndex: 1,
 });
-
-type OrderBy = "asc" | "desc";
-// type Iteratee = keyof Participant | ((item: Participant) => string | number);
 
 const FilterArrow = ({ order }: { order?: OrderBy }) => {
   if (order === "asc") return <ArrowUpward />;
@@ -53,11 +67,11 @@ const FilterColumn = ({
   order,
   pos,
 }: {
-  name: keyof Participant;
+  name: OrderKey;
   func?: OrderFunc;
   order?: OrderBy;
   pos: number;
-  onChange: (name: keyof Participant, order?: OrderFunc) => void;
+  onChange: (name: OrderKey, order?: OrderFunc) => void;
   children: React.ReactNode;
 }) => {
   return (
@@ -70,103 +84,157 @@ const FilterColumn = ({
   );
 };
 
-type OrderFunc = (item: Participant | Weapon) => string | number;
-
-type Order = {
-  name: keyof Participant;
-  func?: OrderFunc;
-  order: OrderBy;
+const groupTypeMap: {
+  [key: string]: { groupBy: GroupBy; type: "ausgeteilt" | "erhalten" };
+} = {
+  Participant: { groupBy: ["participant", "weapon"], type: "ausgeteilt" },
+  Target: { groupBy: ["target", "participant", "weapon"], type: "erhalten" },
+  Rounds: {
+    groupBy: ["start", "participant", "weapon"],
+    type: "ausgeteilt",
+  },
 };
 
-export function Reporter({ data }: { data: string }) {
+export default function Reporter({ data }: { data: string }) {
   const [expand, setExpand] = useState(false);
-  const [sort, setSort] = useState<Order[]>([]);
+  const [showMonster, setShowMonster] = useState(true);
+  const [sort, setSort] = useState<
+    { group: OrderKey; by: OrderBy; func?: OrderFunc }[]
+  >([]);
+  const [groupType, setGroupType] = React.useState<string>("Participant");
+  const { groupBy, type } = groupTypeMap[groupType];
 
-  const changeFilter = (group: keyof Participant, func?: OrderFunc) => {
-    const ordered = sort.find(({ name }) => name === group);
-    if (!ordered) setSort([{ name: group, func, order: "desc" }]);
-    else if (ordered?.order === "desc")
-      setSort([{ name: group, func, order: "asc" }]);
+  const handleGroupTypeChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newGroupType: string
+  ) => {
+    if (newGroupType !== null) setGroupType(newGroupType);
+  };
+
+  const changeFilter = (group: OrderKey, func?: OrderFunc) => {
+    const ordered = sort.find((s) => s.group === group);
+    if (!ordered) setSort([{ group, by: "desc", func }]);
+    else if (ordered.by === "desc") setSort([{ group, by: "asc", func }]);
     else setSort([]);
   };
 
   const filterBy = (
-    name: keyof Participant,
+    name: OrderKey,
     func?: OrderFunc
   ): {
-    name: keyof Participant;
+    name: OrderKey;
     func?: OrderFunc;
     order?: OrderBy;
     pos: number;
-    onChange: (name: keyof Participant, func?: OrderFunc) => void;
-  } => {
-    return {
-      name,
-      func,
-      order: sort.find((entry) => entry.name === name)?.order,
-      pos: sort.findIndex((entry) => entry.name === name),
-      onChange: changeFilter,
-    };
-  };
+    onChange: (name: OrderKey, func?: OrderFunc) => void;
+  } => ({
+    name,
+    func,
+    order: sort.find((s) => s.group === name)?.by,
+    pos: sort.findIndex((s) => s.group === name),
+    onChange: changeFilter,
+  });
 
-  const report = reporter(data);
-  const iteratees = sort.map(({ name, func }) => func || name);
-  const orders = sort.map(({ order }) => order);
-  const sorted = orderBy<Participant>(
-    report.map(({ children, ...rest }) => ({
-      ...rest,
-      children: children && orderBy<Weapon>(children, iteratees, orders),
-    })),
-    iteratees,
-    orders
+  const memoizedReport = useMemo(
+    () => reporter(data, groupBy),
+    [data, groupBy]
+  );
+
+  const memoizedData = useMemo(
+    () =>
+      orderReport(
+        memoizedReport,
+        sort.map(({ by, group, func }) => [func || group, by])
+      ),
+    [memoizedReport, sort]
   );
 
   return (
-    <Table>
-      <Header>
-        <ContentsRow>
-          <Column>
-            <IconButton onClick={() => setExpand(!expand)} size="small">
-              {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-              <ExpanderArrow expand={+expand} />
-            </IconButton>
-          </Column>
-          <FilterColumn {...filterBy("participant")}>Name</FilterColumn>
-          <FilterColumn {...filterBy("dmg")}>
-            Schaden Ausgeteilt (Abgewehrt)
-          </FilterColumn>
-          <Column>Runden gekämpft</Column>
-          <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
-          <FilterColumn
-            {...filterBy(
-              "crit",
-              ({ crit, attack, miss }) => (crit * 100) / (attack - miss) || 0
-            )}
+    <>
+      <ButtonBarContent>
+        <Paper
+          sx={{
+            display: "flex",
+            padding: 0.5,
+          }}
+        >
+          <ToggleButtonGroup
+            exclusive
+            color="primary"
+            value={groupType}
+            onChange={handleGroupTypeChange}
           >
-            Kritisch
-          </FilterColumn>
-          <FilterColumn
-            {...filterBy(
-              "miss",
-              ({ miss, attack }) => (miss * 100) / attack || 0
-            )}
-          >
-            Verfehlt
-          </FilterColumn>
-          <FilterColumn {...filterBy("heal")}>Heilung Ausgeteilt</FilterColumn>
-          <FilterColumn {...filterBy("healed")}>Heilung Erhalten</FilterColumn>
-          <FilterColumn {...filterBy("dmged")}>
-            Schaden Erhalten (Abgewehrt)
-          </FilterColumn>
-          <FilterColumn {...filterBy("struck")}>Getroffen</FilterColumn>
-          <Column>Ausgewichen</Column>
-        </ContentsRow>
-      </Header>
-      <Body>
-        {sorted.map((row) => (
-          <Row key={row.participant + expand} data={row} isExpanded={expand} />
-        ))}
-      </Body>
-    </Table>
+            <ToggleButton value={"Participant"}>Ausgehend</ToggleButton>
+            <ToggleButton value={"Target"}>Eingehend</ToggleButton>
+            <ToggleButton value={"Rounds"}>Kämpfe</ToggleButton>
+          </ToggleButtonGroup>
+        </Paper>
+      </ButtonBarContent>
+
+      <Table>
+        <Head>
+          <ContentsRow>
+            <Column>
+              <IconButton onClick={() => setExpand(!expand)} size="small">
+                {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+                <ExpanderArrow expand={+expand} />
+              </IconButton>
+              <Tooltip
+                title={`Monster ${showMonster ? "ausblenden" : "einblenden"}`}
+              >
+                <IconButton
+                  onClick={() => setShowMonster(!showMonster)}
+                  size="small"
+                >
+                  {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+                  <Hash active={+showMonster} />
+                </IconButton>
+              </Tooltip>
+            </Column>
+            <Column>Name</Column>
+            <FilterColumn {...filterBy("dmg")}>
+              Schaden {type} (Abgewehrt)
+            </FilterColumn>
+            <Column>Runden gekämpft</Column>
+            <FilterColumn
+              {...filterBy("rounds", ({ dmg, rounds }) => dmg / rounds.length)}
+            >
+              Schaden pro Runde
+            </FilterColumn>
+            <Column>min-max Schaden</Column>
+            <Column>min-max Kritisch</Column>
+            <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
+            <FilterColumn
+              {...filterBy(
+                "crit",
+                ({ crit, attack, miss }) => (crit * 100) / (attack - miss) || 0
+              )}
+            >
+              Kritisch
+            </FilterColumn>
+            <FilterColumn
+              {...filterBy(
+                "miss",
+                ({ miss, attack }) => (miss * 100) / attack || 0
+              )}
+            >
+              Verfehlt
+            </FilterColumn>
+            <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
+          </ContentsRow>
+        </Head>
+        <Body>
+          {Object.entries(memoizedData).map(([by, values]) => (
+            <Row
+              key={by + expand}
+              by={by}
+              values={values}
+              isExpanded={expand}
+              showMonster={showMonster}
+            />
+          ))}
+        </Body>
+      </Table>
+    </>
   );
 }

@@ -1,67 +1,121 @@
 import React, { useState } from "react";
-import Offensive from "./Offensive";
-import Defensive from "./Defensive";
-import { Participant } from "../reporter/reporter";
-import { IconButton } from "@mui/material";
+import { IconButton, styled, Tooltip } from "@mui/material";
+import { groupByBattle, roundsToString, Group } from "../reporter/reporter";
 import { ContentsRow } from "./ContentsRow";
 import { Cell, Header } from "./Cell";
-import { ExpanderArrow } from "./ExpanderArrow";
+import { ExpanderArrow } from "./Icons";
 
-export function Row({
-  data: {
-    rounds,
-    participant,
-    children,
-    crit,
-    dmg,
-    heal,
-    hit,
-    miss,
-    attack,
-    block,
-    parry,
-    blocked,
-    dmged,
-    dodged,
-    healed,
-    parried,
-    struck,
-  },
-  isExpanded = false,
-}: {
-  data: Participant;
-  isExpanded?: boolean;
-}) {
-  const [expand, setExpand] = useState(isExpanded);
+const colorMap: { [key: string]: string } = {
+  start: "rgb(230,240,245)",
+  participant: "white",
+  target: "rgb(230,240,245)",
+  weapon: "rgb(230,250,245)",
+  undefined: "white",
+};
 
+const TooltipText = styled("span")({
+  borderBottom: "1px dotted black",
+});
+
+export function Aggregated({
+  group,
+  rounds,
+  minDmg,
+  maxDmg,
+  minCrit,
+  maxCrit,
+  dmg,
+  block,
+  parry,
+  hit,
+  crit,
+  cast,
+  attack,
+  miss,
+  heal,
+}: Group) {
+  const groupedRounds = groupByBattle(rounds);
   return (
     <>
-      <ContentsRow key={participant + dmg}>
-        <Cell>
-          <IconButton onClick={() => setExpand(!expand)} size="small">
-            {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-            <ExpanderArrow expand={+expand} />
-          </IconButton>
+      <Cell backgroundColor={colorMap[group]}>
+        {dmg} ({block + parry})
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        <Tooltip
+          title={
+            <>
+              {groupedRounds.length === 1
+                ? roundsToString(rounds)
+                : groupedRounds.map(([key, value]) => (
+                    <p>{`${key.split(" ").at(-1)}: [${roundsToString(
+                      value
+                    )}]`}</p>
+                  ))}
+            </>
+          }
+          arrow
+        >
+          <TooltipText>{rounds.length}</TooltipText>
+        </Tooltip>
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        {(dmg / rounds.length).toFixed(1)}
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        {minDmg}-{maxDmg}
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        {minCrit}-{maxCrit}
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>{hit + cast}</Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        {((crit * 100) / (attack - miss) || 0).toFixed(1)}%
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        {((miss * 100) / attack || 0).toFixed(1)}%
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>{heal}</Cell>
+    </>
+  );
+}
+
+export function Row({
+  by,
+  values,
+  isExpanded = false,
+  showMonster = false,
+}: {
+  by: string;
+  values: Group;
+  isExpanded?: boolean;
+  showMonster?: boolean;
+}) {
+  const [expand, setExpand] = useState(isExpanded);
+  if (!showMonster && by.includes("#")) return <></>;
+  return (
+    <>
+      <ContentsRow key={by + expand}>
+        <Cell backgroundColor={colorMap[values.group]}>
+          {!Array.isArray(values.children) && (
+            <IconButton onClick={() => setExpand(!expand)} size="small">
+              {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+              <ExpanderArrow expand={+expand} />
+            </IconButton>
+          )}
         </Cell>
-        <Header>{participant}</Header>
-        <Offensive
-          data={{ rounds, crit, dmg, heal, hit, miss, attack, block, parry }}
-        />
-        <Defensive data={{ blocked, dmged, dodged, healed, parried, struck }} />
+        <Header backgroundColor={colorMap[values.group]}>{by}</Header>
+        <Aggregated {...values} />
       </ContentsRow>
       {expand &&
-        children.map((child, index) => (
-          <ContentsRow
-            key={child.participant + child.attack + child.dmg + index}
-          >
-            <Cell />
-            <Header>{child.weapon}</Header>
-            <Offensive data={child} />
-            <Cell />
-            <Cell />
-            <Cell />
-            <Cell />
-          </ContentsRow>
+        !Array.isArray(values.children) &&
+        Object.entries(values.children).map(([by, values]) => (
+          <Row
+            key={by + isExpanded}
+            by={by}
+            values={values}
+            isExpanded={isExpanded}
+            showMonster={showMonster}
+          />
         ))}
     </>
   );
