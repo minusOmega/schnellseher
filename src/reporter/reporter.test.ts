@@ -88,6 +88,7 @@ describe("test process cases", () => {
     expect((report[participant].children as Report)[weapon].hit).toBe(0);
     expect((report[participant].children as Report)[weapon].dmg).toBe(0);
     expect((report[participant].children as Report)[weapon].miss).toBe(0);
+    expect((report[participant].children as Report)[weapon].dodged).toBe(1);
   });
 
   it("can parse a successful critical attack", () => {

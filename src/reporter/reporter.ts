@@ -105,6 +105,7 @@ export type Numbers = {
   heal: number;
   hit: number;
   miss: number;
+  dodged: number;
   attack: number;
   block: number;
   parry: number;
@@ -146,6 +147,7 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       let hits = damage !== undefined ? 1 : 0;
       let cast = 0;
       let miss = 0;
+      let dodged = 0;
       let crit =
         typ === "krit. Treffer" || typ === "exzellenter Treffer" ? 1 : 0;
       let attack = 0;
@@ -163,6 +165,9 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
           attack++;
           break;
         case "weicht aus":
+          attack++;
+          dodged++;
+          break;
         case "misslingt":
         default:
           attack++;
@@ -178,6 +183,7 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
         start,
         hit: hits,
         miss,
+        dodged,
         crit,
         cast,
         attack,
@@ -220,6 +226,7 @@ function aggregateData(values: Data[]): Aggregation {
       }
       total.hit += current.hit;
       total.miss += current.miss;
+      total.dodged += current.dodged;
       total.crit += current.crit;
       total.cast += current.cast;
       total.attack += current.attack;
@@ -233,6 +240,7 @@ function aggregateData(values: Data[]): Aggregation {
       rounds: [],
       hit: 0,
       miss: 0,
+      dodged: 0,
       crit: 0,
       cast: 0,
       attack: 0,
