@@ -25,7 +25,7 @@ import { Row } from "./Row";
 const Table = styled("table")({
   backgroundColor: "white",
   display: "grid",
-  gridTemplateColumns: "repeat(11,auto)",
+  gridTemplateColumns: "repeat(13,auto)",
   width: "fit-content",
   flex: "auto",
 });
@@ -192,10 +192,11 @@ export default function Reporter({ data }: { data: string }) {
               </Tooltip>
             </Column>
             <Column>Name</Column>
+            <Column>Runden gekämpft</Column>
+            <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
             <FilterColumn {...filterBy("dmg")}>
               Schaden {type} (Abgewehrt)
             </FilterColumn>
-            <Column>Runden gekämpft</Column>
             <FilterColumn
               {...filterBy("rounds", ({ dmg, rounds }) => dmg / rounds.length)}
             >
@@ -203,24 +204,13 @@ export default function Reporter({ data }: { data: string }) {
             </FilterColumn>
             <Column>min-max Schaden</Column>
             <Column>min-max Kritisch</Column>
+            <FilterColumn {...filterBy("attack")}>Aktiv</FilterColumn>
+            <FilterColumn {...filterBy("missPercent")}>Verfehlt</FilterColumn>
+            <FilterColumn {...filterBy("dodgedPercent")}>
+              Ausgewichen
+            </FilterColumn>
             <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
-            <FilterColumn
-              {...filterBy(
-                "crit",
-                ({ crit, attack, miss }) => (crit * 100) / (attack - miss) || 0
-              )}
-            >
-              Kritisch
-            </FilterColumn>
-            <FilterColumn
-              {...filterBy(
-                "miss",
-                ({ miss, attack }) => (miss * 100) / attack || 0
-              )}
-            >
-              Verfehlt
-            </FilterColumn>
-            <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
+            <FilterColumn {...filterBy("critPercent")}>Kritisch</FilterColumn>
           </ContentsRow>
         </Head>
         <Body>

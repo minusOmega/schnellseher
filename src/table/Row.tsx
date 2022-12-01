@@ -17,6 +17,16 @@ const TooltipText = styled("span")({
   borderBottom: "1px dotted black",
 });
 
+const Spaced = styled("span")({
+  display: "flex",
+  justifyContent: "space-around",
+});
+
+const Percent = styled("span")({
+  minWidth: "3em",
+  textAlign: "end",
+});
+
 export function Aggregated({
   group,
   rounds,
@@ -29,17 +39,18 @@ export function Aggregated({
   parry,
   hit,
   crit,
+  critPercent,
   cast,
   attack,
   miss,
+  missPercent,
+  dodged,
+  dodgedPercent,
   heal,
 }: Group) {
   const groupedRounds = groupByBattle(rounds);
   return (
     <>
-      <Cell backgroundColor={colorMap[group]}>
-        {dmg} ({block + parry})
-      </Cell>
       <Cell backgroundColor={colorMap[group]}>
         <Tooltip
           title={
@@ -58,6 +69,11 @@ export function Aggregated({
           <TooltipText>{rounds.length}</TooltipText>
         </Tooltip>
       </Cell>
+      <Cell backgroundColor={colorMap[group]}>{heal}</Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        {dmg} ({block + parry})
+      </Cell>
+
       <Cell backgroundColor={colorMap[group]}>
         {(dmg / rounds.length).toFixed(1)}
       </Cell>
@@ -67,14 +83,48 @@ export function Aggregated({
       <Cell backgroundColor={colorMap[group]}>
         {minCrit}-{maxCrit}
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>{hit + cast}</Cell>
+      <Cell backgroundColor={colorMap[group]}> {attack}</Cell>
       <Cell backgroundColor={colorMap[group]}>
-        {((crit * 100) / (attack - miss) || 0).toFixed(1)}%
+        <Spaced>
+          <Percent>
+            {Number.isFinite(missPercent)
+              ? missPercent.toFixed(1) + "%"
+              : "Fehler"}
+          </Percent>
+          <span>({miss})</span>
+        </Spaced>
       </Cell>
       <Cell backgroundColor={colorMap[group]}>
-        {((miss * 100) / attack || 0).toFixed(1)}%
+        <Spaced>
+          <Percent>
+            {Number.isFinite(dodgedPercent)
+              ? dodgedPercent.toFixed(1) + "%"
+              : "Fehler"}
+          </Percent>
+          <span>({dodged})</span>
+        </Spaced>
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>{heal}</Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        {cast > 0 ? (
+          <Tooltip title={`${hit} Treffer + ${cast} erfolgreiche Rundenzauber`}>
+            <TooltipText>
+              {hit} + {cast}
+            </TooltipText>
+          </Tooltip>
+        ) : (
+          hit
+        )}
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        <Spaced>
+          <Percent>
+            {Number.isFinite(critPercent)
+              ? critPercent.toFixed(1) + "%"
+              : "Fehler"}
+          </Percent>
+          <span>({crit})</span>
+        </Spaced>
+      </Cell>
     </>
   );
 }

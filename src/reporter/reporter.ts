@@ -144,7 +144,7 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       start,
     }) => {
       let round = parseTime(time);
-      let hits = damage !== undefined ? 1 : 0;
+      let hits = damage !== undefined ? 1 : heal !== undefined ? 1 : 0;
       let cast = 0;
       let miss = 0;
       let dodged = 0;
@@ -160,6 +160,7 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
           cast++;
           attack++;
           break;
+        case "misslingt":
         case "verfehlt":
           miss++;
           attack++;
@@ -168,7 +169,6 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
           attack++;
           dodged++;
           break;
-        case "misslingt":
         default:
           attack++;
           break;
@@ -202,6 +202,9 @@ export type Aggregation = Numbers & {
   maxDmg: number;
   minCrit: number;
   maxCrit: number;
+  critPercent: number;
+  missPercent: number;
+  dodgedPercent: number;
 };
 
 export const groupByBattle = (rounds: Round[]) =>
@@ -252,11 +255,18 @@ function aggregateData(values: Data[]): Aggregation {
       heal: 0,
       block: 0,
       parry: 0,
+      critPercent: 0,
+      missPercent: 0,
+      dodgedPercent: 0,
     }
   );
 
   if (aggregated.minCrit === Infinity) aggregated.minCrit = 0;
   if (aggregated.minDmg === Infinity) aggregated.minDmg = 0;
+
+  aggregated.critPercent = (aggregated.crit * 100) / aggregated.hit || 0;
+  aggregated.missPercent = (aggregated.miss * 100) / aggregated.attack || 0;
+  aggregated.dodgedPercent = (aggregated.dodged * 100) / aggregated.attack || 0;
 
   aggregated.rounds = Array.from(
     new Map(aggregated.rounds.map((item) => [item.id, item])).values()
