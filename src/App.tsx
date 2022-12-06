@@ -70,7 +70,11 @@ function App() {
           <>
             <Header>Schnellseher</Header>
             <BottomRight>
-              <IconButton href="https://discord.gg/suaTb7arN9">
+              <IconButton
+                href="https://discord.gg/suaTb7arN9"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <DiscordIcon />
               </IconButton>
             </BottomRight>

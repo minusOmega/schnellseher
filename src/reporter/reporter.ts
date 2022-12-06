@@ -104,6 +104,7 @@ export type Numbers = {
   dmg: number;
   heal: number;
   hit: number;
+  healed: number;
   miss: number;
   dodged: number;
   attack: number;
@@ -144,7 +145,8 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       start,
     }) => {
       let round = parseTime(time);
-      let hits = damage !== undefined ? 1 : heal !== undefined ? 1 : 0;
+      let healed = heal !== undefined ? 1 : 0;
+      let hits = damage !== undefined ? 1 : 0;
       let cast = 0;
       let miss = 0;
       let dodged = 0;
@@ -187,6 +189,7 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
         crit,
         cast,
         attack,
+        healed,
         dmg: parseInt(damage) | 0,
         heal: parseInt(heal) | 0,
         block: parseInt(block) | 0,
@@ -228,6 +231,7 @@ function aggregateData(values: Data[]): Aggregation {
         total.maxDmg = Math.max(total.maxDmg, current.dmg);
       }
       total.hit += current.hit;
+      total.healed += current.healed;
       total.miss += current.miss;
       total.dodged += current.dodged;
       total.crit += current.crit;
@@ -253,6 +257,7 @@ function aggregateData(values: Data[]): Aggregation {
       minCrit: Infinity,
       maxCrit: 0,
       heal: 0,
+      healed: 0,
       block: 0,
       parry: 0,
       critPercent: 0,
@@ -264,9 +269,10 @@ function aggregateData(values: Data[]): Aggregation {
   if (aggregated.minCrit === Infinity) aggregated.minCrit = 0;
   if (aggregated.minDmg === Infinity) aggregated.minDmg = 0;
 
-  aggregated.critPercent = (aggregated.crit * 100) / aggregated.hit || 0;
-  aggregated.missPercent = (aggregated.miss * 100) / aggregated.attack || 0;
-  aggregated.dodgedPercent = (aggregated.dodged * 100) / aggregated.attack || 0;
+  const { attack, hit, dodged, healed, miss, crit } = aggregated;
+  aggregated.missPercent = (miss * 100) / attack || 0;
+  aggregated.dodgedPercent = (dodged * 100) / (hit + dodged) || 0;
+  aggregated.critPercent = (crit * 100) / (hit + healed) || 0;
 
   aggregated.rounds = Array.from(
     new Map(aggregated.rounds.map((item) => [item.id, item])).values()
