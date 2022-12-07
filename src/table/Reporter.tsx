@@ -7,6 +7,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Paper,
+  Divider,
 } from "@mui/material";
 
 import reporter, {
@@ -21,6 +22,7 @@ import { ExpanderArrow, Hash } from "./Icons";
 import { ArrowDownward, ArrowUpward, Sort } from "@mui/icons-material";
 import ButtonBarContent from "../ButtonBarContent";
 import { Row } from "./Row";
+import LootTable from "./LootTable";
 
 const Table = styled("table")({
   backgroundColor: "white",
@@ -95,6 +97,8 @@ const groupTypeMap: {
   },
 };
 
+type View = "Battle" | "Loot";
+
 export default function Reporter({ data }: { data: string }) {
   const [expand, setExpand] = useState(false);
   const [showMonster, setShowMonster] = useState(true);
@@ -102,6 +106,7 @@ export default function Reporter({ data }: { data: string }) {
     { group: OrderKey; by: OrderBy; func?: OrderFunc }[]
   >([]);
   const [groupType, setGroupType] = React.useState<string>("Participant");
+  const [view, setView] = React.useState<View>("Battle");
   const { groupBy, type } = groupTypeMap[groupType];
 
   const handleGroupTypeChange = (
@@ -109,6 +114,13 @@ export default function Reporter({ data }: { data: string }) {
     newGroupType: string
   ) => {
     if (newGroupType !== null) setGroupType(newGroupType);
+  };
+
+  const handleViewChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newView: View | null
+  ) => {
+    setView(newView !== null ? newView : "Battle");
   };
 
   const changeFilter = (group: OrderKey, func?: OrderFunc) => {
@@ -135,7 +147,7 @@ export default function Reporter({ data }: { data: string }) {
     onChange: changeFilter,
   });
 
-  const memoizedReport = useMemo(
+  const [memoizedReport, memorizedLoot, memorizedItems] = useMemo(
     () => reporter(data, groupBy),
     [data, groupBy]
   );
@@ -168,63 +180,78 @@ export default function Reporter({ data }: { data: string }) {
             <ToggleButton value={"Target"}>Eingehend</ToggleButton>
             <ToggleButton value={"Rounds"}>Kämpfe</ToggleButton>
           </ToggleButtonGroup>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+          <ToggleButtonGroup
+            exclusive
+            color="primary"
+            value={view}
+            onChange={handleViewChange}
+          >
+            <ToggleButton value={"Loot"}>Beuteverteilung</ToggleButton>
+          </ToggleButtonGroup>
         </Paper>
       </ButtonBarContent>
-
-      <Table>
-        <Head>
-          <ContentsRow>
-            <Column>
-              <IconButton onClick={() => setExpand(!expand)} size="small">
-                {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-                <ExpanderArrow expand={+expand} />
-              </IconButton>
-              <Tooltip
-                title={`Monster ${showMonster ? "ausblenden" : "einblenden"}`}
-              >
-                <IconButton
-                  onClick={() => setShowMonster(!showMonster)}
-                  size="small"
-                >
+      {view === "Loot" ? (
+        <LootTable data={memorizedLoot} items={memorizedItems} />
+      ) : (
+        <Table>
+          <Head>
+            <ContentsRow>
+              <Column>
+                <IconButton onClick={() => setExpand(!expand)} size="small">
                   {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-                  <Hash active={+showMonster} />
+                  <ExpanderArrow expand={+expand} />
                 </IconButton>
-              </Tooltip>
-            </Column>
-            <Column>Name</Column>
-            <Column>Runden gekämpft</Column>
-            <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
-            <FilterColumn {...filterBy("dmg")}>
-              Schaden {type} (Abgewehrt)
-            </FilterColumn>
-            <FilterColumn
-              {...filterBy("rounds", ({ dmg, rounds }) => dmg / rounds.length)}
-            >
-              Schaden pro Runde
-            </FilterColumn>
-            <Column>min-max Schaden</Column>
-            <Column>min-max Kritisch</Column>
-            <FilterColumn {...filterBy("attack")}>Aktiv</FilterColumn>
-            <FilterColumn {...filterBy("missPercent")}>Verfehlt</FilterColumn>
-            <FilterColumn {...filterBy("dodgedPercent")}>
-              Ausgewichen
-            </FilterColumn>
-            <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
-            <FilterColumn {...filterBy("critPercent")}>Kritisch</FilterColumn>
-          </ContentsRow>
-        </Head>
-        <Body>
-          {Object.entries(memoizedData).map(([by, values]) => (
-            <Row
-              key={by + expand}
-              by={by}
-              values={values}
-              isExpanded={expand}
-              showMonster={showMonster}
-            />
-          ))}
-        </Body>
-      </Table>
+                <Tooltip
+                  title={`Monster ${showMonster ? "ausblenden" : "einblenden"}`}
+                >
+                  <IconButton
+                    onClick={() => setShowMonster(!showMonster)}
+                    size="small"
+                  >
+                    {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+                    <Hash active={+showMonster} />
+                  </IconButton>
+                </Tooltip>
+              </Column>
+              <Column>Name</Column>
+              <Column>Runden gekämpft</Column>
+              <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
+              <FilterColumn {...filterBy("dmg")}>
+                Schaden {type} (Abgewehrt)
+              </FilterColumn>
+              <FilterColumn
+                {...filterBy(
+                  "rounds",
+                  ({ dmg, rounds }) => dmg / rounds.length
+                )}
+              >
+                Schaden pro Runde
+              </FilterColumn>
+              <Column>min-max Schaden</Column>
+              <Column>min-max Kritisch</Column>
+              <FilterColumn {...filterBy("attack")}>Aktiv</FilterColumn>
+              <FilterColumn {...filterBy("missPercent")}>Verfehlt</FilterColumn>
+              <FilterColumn {...filterBy("dodgedPercent")}>
+                Ausgewichen
+              </FilterColumn>
+              <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
+              <FilterColumn {...filterBy("critPercent")}>Kritisch</FilterColumn>
+            </ContentsRow>
+          </Head>
+          <Body>
+            {Object.entries(memoizedData).map(([by, values]) => (
+              <Row
+                key={by + expand}
+                by={by}
+                values={values}
+                isExpanded={expand}
+                showMonster={showMonster}
+              />
+            ))}
+          </Body>
+        </Table>
+      )}
     </>
   );
 }
