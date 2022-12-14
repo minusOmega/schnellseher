@@ -13,13 +13,11 @@ const Body = styled("tbody")({
 
 const Column = styled("th")({
   "&:nth-of-type(1)": { zIndex: 2, left: 0 },
-  minHeight: 90,
   alignItems: "flex-start",
   border: "1px solid black",
   padding: 8,
   display: "flex",
   position: "sticky",
-  userSelect: "none",
   top: 0,
   backgroundColor: "white",
   zIndex: 1,
