@@ -153,7 +153,12 @@ export function Row({
             </IconButton>
           )}
         </Cell>
-        <Header backgroundColor={colorMap[values.group]}>{by}</Header>
+        <Header
+          whiteSpace={values.group !== "weapon" ? "nowrap" : undefined}
+          backgroundColor={colorMap[values.group]}
+        >
+          {by}
+        </Header>
         <Aggregated {...values} />
       </ContentsRow>
       {expand &&

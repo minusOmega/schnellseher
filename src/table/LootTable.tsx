@@ -37,7 +37,7 @@ export default function LootTable({
     width: "fit-content",
     flex: "auto",
     margin: 8,
-    marginLeft: 52,
+    marginLeft: 48,
   });
 
   return (
