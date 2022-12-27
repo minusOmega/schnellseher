@@ -36,6 +36,8 @@ export default function LootTable({
     gridTemplateColumns: `repeat(${items.length + 1},auto)`,
     width: "fit-content",
     flex: "auto",
+    margin: 8,
+    marginLeft: 52,
   });
 
   return (
@@ -51,7 +53,9 @@ export default function LootTable({
       <Body>
         {Object.entries(data).map(([key, values]) => (
           <ContentsRow>
-            <Header backgroundColor="white">{key}</Header>
+            <Header whiteSpace="nowrap" backgroundColor="white">
+              {key}
+            </Header>
             {items.map((item) =>
               values.hasOwnProperty(item) ? (
                 <Cell>{values[item]}</Cell>

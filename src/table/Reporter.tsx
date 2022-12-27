@@ -91,13 +91,7 @@ const groupTypeMap: {
 } = {
   Participant: { groupBy: ["participant", "weapon"], type: "ausgeteilt" },
   Target: { groupBy: ["target", "participant", "weapon"], type: "erhalten" },
-  Rounds: {
-    groupBy: ["start", "participant", "weapon"],
-    type: "ausgeteilt",
-  },
 };
-
-type View = "Battle" | "Loot";
 
 export default function Reporter({ data }: { data: string }) {
   const [expand, setExpand] = useState(false);
@@ -106,7 +100,8 @@ export default function Reporter({ data }: { data: string }) {
     { group: OrderKey; by: OrderBy; func?: OrderFunc }[]
   >([]);
   const [groupType, setGroupType] = React.useState<string>("Participant");
-  const [view, setView] = React.useState<View>("Battle");
+  const [showLoot, setShowLoot] = React.useState<boolean>(false);
+  const [showBattles, setShowBattles] = React.useState<boolean>(false);
   const { groupBy, type } = groupTypeMap[groupType];
 
   const handleGroupTypeChange = (
@@ -116,11 +111,18 @@ export default function Reporter({ data }: { data: string }) {
     if (newGroupType !== null) setGroupType(newGroupType);
   };
 
-  const handleViewChange = (
+  const handleShowLootChange = (
     event: React.MouseEvent<HTMLElement>,
-    newView: View | null
+    newView: boolean | null
   ) => {
-    setView(newView !== null ? newView : "Battle");
+    setShowLoot(newView !== null ? newView : false);
+  };
+
+  const handleShowBattlesChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newView: boolean | null
+  ) => {
+    setShowBattles(newView !== null ? newView : false);
   };
 
   const changeFilter = (group: OrderKey, func?: OrderFunc) => {
@@ -148,8 +150,8 @@ export default function Reporter({ data }: { data: string }) {
   });
 
   const [memoizedReport, memorizedLoot, memorizedItems] = useMemo(
-    () => reporter(data, groupBy),
-    [data, groupBy]
+    () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy),
+    [data, showBattles, groupBy]
   );
 
   const memoizedData = useMemo(
@@ -178,80 +180,82 @@ export default function Reporter({ data }: { data: string }) {
           >
             <ToggleButton value={"Participant"}>Ausgehend</ToggleButton>
             <ToggleButton value={"Target"}>Eingehend</ToggleButton>
-            <ToggleButton value={"Rounds"}>Kämpfe</ToggleButton>
           </ToggleButtonGroup>
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
           <ToggleButtonGroup
             exclusive
             color="primary"
-            value={view}
-            onChange={handleViewChange}
+            value={showBattles}
+            onChange={handleShowBattlesChange}
+          >
+            <ToggleButton value={"Loot"}>Kämpfe</ToggleButton>
+          </ToggleButtonGroup>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+          <ToggleButtonGroup
+            exclusive
+            color="primary"
+            value={showLoot}
+            onChange={handleShowLootChange}
           >
             <ToggleButton value={"Loot"}>Beuteverteilung</ToggleButton>
           </ToggleButtonGroup>
         </Paper>
       </ButtonBarContent>
-      {view === "Loot" ? (
-        <LootTable data={memorizedLoot} items={memorizedItems} />
-      ) : (
-        <Table>
-          <Head>
-            <ContentsRow>
-              <Column>
-                <IconButton onClick={() => setExpand(!expand)} size="small">
-                  {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-                  <ExpanderArrow expand={+expand} />
-                </IconButton>
-                <Tooltip
-                  title={`Monster ${showMonster ? "ausblenden" : "einblenden"}`}
-                >
-                  <IconButton
-                    onClick={() => setShowMonster(!showMonster)}
-                    size="small"
-                  >
-                    {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-                    <Hash active={+showMonster} />
-                  </IconButton>
-                </Tooltip>
-              </Column>
-              <Column>Name</Column>
-              <Column>Runden gekämpft</Column>
-              <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
-              <FilterColumn {...filterBy("dmg")}>
-                Schaden {type} (Abgewehrt)
-              </FilterColumn>
-              <FilterColumn
-                {...filterBy(
-                  "rounds",
-                  ({ dmg, rounds }) => dmg / rounds.length
-                )}
+      {showLoot && <LootTable data={memorizedLoot} items={memorizedItems} />}
+      <Table>
+        <Head>
+          <ContentsRow>
+            <Column>
+              <IconButton onClick={() => setExpand(!expand)} size="small">
+                {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+                <ExpanderArrow expand={+expand} fontSize="small" />
+              </IconButton>
+              <Tooltip
+                title={`Monster ${showMonster ? "ausblenden" : "einblenden"}`}
               >
-                Schaden pro Runde
-              </FilterColumn>
-              <Column>min-max Schaden</Column>
-              <Column>min-max Kritisch</Column>
-              <FilterColumn {...filterBy("attack")}>Aktiv</FilterColumn>
-              <FilterColumn {...filterBy("missPercent")}>Verfehlt</FilterColumn>
-              <FilterColumn {...filterBy("dodgedPercent")}>
-                Ausgewichen
-              </FilterColumn>
-              <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
-              <FilterColumn {...filterBy("critPercent")}>Kritisch</FilterColumn>
-            </ContentsRow>
-          </Head>
-          <Body>
-            {Object.entries(memoizedData).map(([by, values]) => (
-              <Row
-                key={by + expand}
-                by={by}
-                values={values}
-                isExpanded={expand}
-                showMonster={showMonster}
-              />
-            ))}
-          </Body>
-        </Table>
-      )}
+                <IconButton
+                  onClick={() => setShowMonster(!showMonster)}
+                  size="small"
+                >
+                  {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+                  <Hash active={+showMonster} fontSize="inherit" />
+                </IconButton>
+              </Tooltip>
+            </Column>
+            <Column>Name</Column>
+            <Column>Runden gekämpft</Column>
+            <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
+            <FilterColumn {...filterBy("dmg")}>
+              Schaden {type} (Abgewehrt)
+            </FilterColumn>
+            <FilterColumn
+              {...filterBy("rounds", ({ dmg, rounds }) => dmg / rounds.length)}
+            >
+              Schaden pro Runde
+            </FilterColumn>
+            <Column>min-max Schaden</Column>
+            <Column>min-max Kritisch</Column>
+            <FilterColumn {...filterBy("attack")}>Aktiv</FilterColumn>
+            <FilterColumn {...filterBy("missPercent")}>Verfehlt</FilterColumn>
+            <FilterColumn {...filterBy("dodgedPercent")}>
+              Ausgewichen
+            </FilterColumn>
+            <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
+            <FilterColumn {...filterBy("critPercent")}>Kritisch</FilterColumn>
+          </ContentsRow>
+        </Head>
+        <Body>
+          {Object.entries(memoizedData).map(([by, values]) => (
+            <Row
+              key={by + expand}
+              by={by}
+              values={values}
+              isExpanded={expand}
+              showMonster={showMonster}
+            />
+          ))}
+        </Body>
+      </Table>
     </>
   );
 }

@@ -6,7 +6,7 @@ import { Cell, Header } from "./Cell";
 import { ExpanderArrow } from "./Icons";
 
 const colorMap: { [key: string]: string } = {
-  start: "rgb(230,240,245)",
+  start: "rgb(224,224,224)",
   participant: "white",
   target: "rgb(230,240,245)",
   weapon: "rgb(230,250,245)",
@@ -149,7 +149,7 @@ export function Row({
           {!Array.isArray(values.children) && (
             <IconButton onClick={() => setExpand(!expand)} size="small">
               {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-              <ExpanderArrow expand={+expand} />
+              <ExpanderArrow expand={+expand} fontSize="inherit" />
             </IconButton>
           )}
         </Cell>
