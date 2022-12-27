@@ -20,6 +20,10 @@ type RegexGroups = {
   typ: string;
   block: string;
   parry: string;
+
+  move: string;
+  swap: string;
+  defeated: string;
 };
 
 type Battle = {
@@ -31,6 +35,15 @@ type Battles = Battle[];
 
 type RawData = RegexGroups & {
   start: string;
+};
+
+export const constants = {
+  move: "nähert sich",
+  moveWeapon: "(In Bewegung)",
+  defeated: "sinkt kampfunfähig zu Boden",
+  defeatedWeapon: "(Kampfunfähig)",
+  swap: "wechselt in den Nahkampf",
+  swapWeapon: "(Waffenwechsel)",
 };
 
 export function parseInput(input: string) {
@@ -81,7 +94,7 @@ export function parseBattles(battles: Battles): [RawData[], Loot, string[]] {
     const { input, start } = battle;
     allLoot.push(parseLoot(battle));
     let regex =
-      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})?(?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:(?!versorgt)[a-z]+\s){1,2})(?<target>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})(?:.*?: )(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\()\d+(?=\sSchaden geblockt\)\.))|(?<parry>(?<=\()\d+(?=\sSchaden pariert\)\.)))?/g;
+      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})?( (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (Nahkampf|Fernkampf))|((?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:[a-z]+\s){1,2})))(?<target>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})?(?:.*?: )?(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\()\d+(?=\sSchaden geblockt\)\.))|(?<parry>(?<=\()\d+(?=\sSchaden pariert\)\.)))?/g;
     let match: RegExpExecArray | null;
     while ((match = regex.exec(input))) {
       if (match?.groups) {
@@ -170,8 +183,8 @@ function parseTime(time: string): number {
 }
 
 export function parseRegexGroups(groups: RawData[]): Data[] {
-  return groups.map(
-    ({
+  return groups.map((group) => {
+    let {
       time,
       damage,
       typ,
@@ -183,60 +196,76 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       block,
       parry,
       start,
-    }) => {
-      let round = parseTime(time);
-      let healed = heal !== undefined ? 1 : 0;
-      let hits = damage !== undefined ? 1 : 0;
-      let cast = 0;
-      let miss = 0;
-      let dodged = 0;
-      let crit =
-        typ === "krit. Treffer" || typ === "exzellenter Treffer" ? 1 : 0;
-      let attack = 0;
-      switch (hit) {
-        case "kein Schaden":
-          hits++;
-          attack++;
-          break;
-        case "erfolgreich":
-          cast++;
-          attack++;
-          break;
-        case "misslingt":
-        case "verfehlt":
-          miss++;
-          attack++;
-          break;
-        case "weicht aus":
-          attack++;
-          dodged++;
-          break;
-        default:
-          attack++;
-          break;
-      }
-
-      return {
-        participant,
-        weapon,
-        target,
-        round,
-        time,
-        start,
-        hit: hits,
-        miss,
-        dodged,
-        crit,
-        cast,
-        attack,
-        healed,
-        dmg: parseInt(damage) | 0,
-        heal: parseInt(heal) | 0,
-        block: parseInt(block) | 0,
-        parry: parseInt(parry) | 0,
-      };
+      move,
+      defeated,
+      swap,
+    } = group;
+    let round = parseTime(time);
+    let healed = heal !== undefined ? 1 : 0;
+    let hits = damage !== undefined ? 1 : 0;
+    let cast = 0;
+    let miss = 0;
+    let dodged = 0;
+    let crit = typ === "krit. Treffer" || typ === "exzellenter Treffer" ? 1 : 0;
+    let attack = 0;
+    switch (hit) {
+      case undefined:
+        break;
+      case "kein Schaden":
+        hits++;
+        attack++;
+        break;
+      case "erfolgreich":
+        cast++;
+        attack++;
+        break;
+      case "misslingt":
+      case "verfehlt":
+        miss++;
+        attack++;
+        break;
+      case "weicht aus":
+        attack++;
+        dodged++;
+        break;
+      default:
+        attack++;
+        break;
     }
-  );
+
+    if (weapon === undefined) {
+      if (move === constants.move) {
+        weapon = constants.moveWeapon;
+      }
+      if (defeated === constants.defeated) {
+        weapon = constants.defeatedWeapon;
+      }
+      if (swap === constants.swap) {
+        weapon = constants.swapWeapon;
+      }
+      if (weapon === undefined) console.warn("undefined weapon in", group);
+    }
+
+    return {
+      participant,
+      weapon,
+      target,
+      round,
+      time,
+      start,
+      hit: hits,
+      miss,
+      dodged,
+      crit,
+      cast,
+      attack,
+      healed,
+      dmg: parseInt(damage) | 0,
+      heal: parseInt(heal) | 0,
+      block: parseInt(block) | 0,
+      parry: parseInt(parry) | 0,
+    };
+  });
 }
 export type Round = { id?: string; start: string; round: number };
 export type Aggregation = Numbers & {

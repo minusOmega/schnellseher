@@ -3,6 +3,7 @@ import reporter, {
   parseBattles,
   parseInput,
   roundsToString,
+  constants,
 } from "./reporter";
 
 describe("test process cases", () => {
@@ -191,6 +192,34 @@ describe("test process cases", () => {
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].heal).toBe(0);
     expect((report[participant].children as Report)[weapon].hit).toBe(0);
+  });
+
+  it("can parse movement", () => {
+    const [participant] = ["Magier"];
+    const [report] = reporter(`
+    0:00 ${participant} nähert sich Feind.`);
+    expect(
+      report[participant].children.hasOwnProperty(constants.moveWeapon)
+    ).toBe(true);
+  });
+
+  it("can parse defeat", () => {
+    const [participant] = ["Magier"];
+    const [report] = reporter(`
+    0:00 ${participant} sinkt kampfunfähig zu Boden.`);
+    expect(
+      report[participant].children.hasOwnProperty(constants.defeatedWeapon)
+    ).toBe(true);
+  });
+
+  it("can parse weapon swap", () => {
+    const [participant] = ["Magier"];
+    const [report] = reporter(`
+1:06 ${participant} wechselt in den Nahkampf.
+    `);
+    expect(
+      report[participant].children.hasOwnProperty(constants.swapWeapon)
+    ).toBe(true);
   });
 });
 
@@ -440,7 +469,6 @@ ${second}	75 Gold, 1 Sternenstaub, 2 Sand
 `;
 
     const [, loot] = parseBattles(parseInput(input));
-    console.log(loot);
     expect(loot[first].Gold).toBe(150);
     expect(loot[second].Gold).toBe(175);
     expect(loot[second].Sand).toBe(3);
@@ -461,7 +489,6 @@ ${second}	75 Gold, 1 Sternenstaub, 2 Sand
 `;
 
     const [, loot] = parseBattles(parseInput(input));
-    console.log(loot);
     expect(loot[second]).toHaveProperty("Gold");
     expect(loot[second]).toHaveProperty("Sand");
     expect(loot[second]).toHaveProperty("Einfacher Hartleder-Buckler (20)");
