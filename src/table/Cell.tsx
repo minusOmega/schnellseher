@@ -25,5 +25,5 @@ export const Header = styled("td", {
   backgroundColor,
   border: "1px solid black",
   padding: 5,
-  whiteSpace,
+  whiteSpace: whiteSpace,
 }));

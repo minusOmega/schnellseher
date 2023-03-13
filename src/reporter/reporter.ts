@@ -66,7 +66,7 @@ export type Loot = Record<string, Record<string, number>>;
 
 function parseLoot({ input }: Battle): Loot {
   let regex =
-    /(?<participant>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?: |-)[A-ZÄÖÜß][a-zäöü]+|){1,2})\t(?<loot>\d* .*)\n/g;
+    /(?<participant>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d|(?: |-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})\t(?<loot>\d* .*)\n/g;
   let match: RegExpExecArray | null;
   let result: Loot = {};
   while ((match = regex.exec(input))) {
@@ -86,6 +86,10 @@ function parseLoot({ input }: Battle): Loot {
   return result;
 }
 
+// regex101 link:
+// https://regex101.com/r/Apd1we/1
+// regex101 delete regex link:
+// https://regex101.com/delete/SEYXxm7h7S7FuH6gz9p12rRz
 export function parseBattles(battles: Battles): [RawData[], Loot, string[]] {
   const groups: RawData[] = [];
   const allLoot: Loot[] = [];
@@ -94,7 +98,7 @@ export function parseBattles(battles: Battles): [RawData[], Loot, string[]] {
     const { input, start } = battle;
     allLoot.push(parseLoot(battle));
     let regex =
-      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})?( (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (Nahkampf|Fernkampf))|((?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:[a-z]+\s){1,2})))(?<target>[A-ZÄÖÜß][a-zäöü]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöü]+|){1,2})?(?:.*?: )?(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\()\d+(?=\sSchaden geblockt\)\.))|(?<parry>(?<=\()\d+(?=\sSchaden pariert\)\.)))?/g;
+      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:[a-z]+\s){1,2})))(?<target>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})?(?:.*?: )?(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\()\d+(?=\sSchaden geblockt\)\.))|(?<parry>(?<=\()\d+(?=\sSchaden pariert\)\.)))?/g;
     let match: RegExpExecArray | null;
     while ((match = regex.exec(input))) {
       if (match?.groups) {
@@ -209,8 +213,6 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
     let crit = typ === "krit. Treffer" || typ === "exzellenter Treffer" ? 1 : 0;
     let attack = 0;
     switch (hit) {
-      case undefined:
-        break;
       case "kein Schaden":
         hits++;
         attack++;
@@ -233,6 +235,8 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
         break;
     }
 
+    if (target === undefined && defeated === constants.defeated)
+      target = participant;
     if (weapon === undefined) {
       if (move === constants.move) {
         weapon = constants.moveWeapon;
@@ -284,6 +288,10 @@ export const groupByBattle = (rounds: Round[]) =>
 export const roundsToString = (rounds: Round[]) =>
   rounds.map(({ round }) => round).join(", ");
 
+function ignoreForTotal(current: Data): boolean {
+  return current.weapon.startsWith("(");
+}
+
 function aggregateData(values: Data[]): Aggregation {
   const aggregated = values.reduce(
     (total: Aggregation, current: Data) => {
@@ -292,6 +300,9 @@ function aggregateData(values: Data[]): Aggregation {
         start: current.start,
         round: current.round,
       });
+
+      if (ignoreForTotal(current)) return total;
+
       if (current.crit === 1) {
         total.minCrit = Math.min(total.minCrit, current.dmg);
         total.maxCrit = Math.max(total.maxCrit, current.dmg);

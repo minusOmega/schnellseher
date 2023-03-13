@@ -223,7 +223,7 @@ export default function Reporter({ data }: { data: string }) {
               </Tooltip>
             </Column>
             <Column>Name</Column>
-            <Column>Runden gekämpft</Column>
+            <Column>Runden</Column>
             <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
             <FilterColumn {...filterBy("dmg")}>
               Schaden {type} (Abgewehrt)

@@ -311,6 +311,35 @@ describe("test round aggregation", () => {
       roundsToString((report["Magier"].children as Report)[spell].rounds)
     ).toEqual("1, 150");
   });
+
+  it("combines hits and misses", () => {
+    const [report] = reporter(`
+  Runde 1
+  0:00 Magier [Dmg] greift Gegner an: verursacht 12 Schaden.
+  0:08 Magier [Dmg] greift Gegner an: verfehlt.
+  
+  Runde 2
+  0:42 Magier [Dmg] greift Gegner an: verursacht 49 Schaden
+      `);
+    console.log(report);
+    expect(report["Magier"].hit).toEqual(2);
+    expect(report["Magier"].miss).toEqual(1);
+    expect(report["Magier"].attack).toEqual(3);
+  });
+
+  it("ignores movement", () => {
+    const [report] = reporter(`
+  Runde 1
+  0:00 Magier nähert sich Gegner.
+  0:08 Magier nähert sich Gegner.
+  
+  Runde 2
+  0:42 Magier [Dmg] greift Gegner an: verursacht 49 Schaden
+      `);
+    console.log(report);
+    expect(report["Magier"].hit).toEqual(1);
+    expect(report["Magier"].attack).toEqual(1);
+  });
 });
 
 describe("test damage over time calculation", () => {
