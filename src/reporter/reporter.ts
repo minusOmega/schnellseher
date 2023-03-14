@@ -42,7 +42,8 @@ export const constants = {
   moveWeapon: "(In Bewegung)",
   defeated: "sinkt kampfunfähig zu Boden",
   defeatedWeapon: "(Kampfunfähig)",
-  swap: "wechselt in den Nahkampf",
+  swapMele: "wechselt in den Nahkampf",
+  swapRanged: "wechselt in den Fernkampf",
   swapWeapon: "(Waffenwechsel)",
 };
 
@@ -252,7 +253,7 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       if (defeated === constants.defeated) {
         weapon = constants.defeatedWeapon;
       }
-      if (swap === constants.swap) {
+      if (swap === constants.swapMele || swap === constants.swapRanged) {
         weapon = constants.swapWeapon;
       }
       if (weapon === undefined) console.warn("undefined weapon in", group);
@@ -297,7 +298,7 @@ export const roundsToString = (rounds: Round[]) =>
   rounds.map(({ round }) => round).join(", ");
 
 function ignoreForTotal(current: Data): boolean {
-  return current.weapon.startsWith("(");
+  return current.weapon !== undefined && current.weapon.startsWith("(");
 }
 
 function aggregateData(values: Data[]): Aggregation {

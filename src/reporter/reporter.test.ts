@@ -212,10 +212,20 @@ describe("test process cases", () => {
     ).toBe(true);
   });
 
-  it("can parse weapon swap", () => {
+  it("can parse mele weapon swap", () => {
     const [participant] = ["Magier"];
     const [report] = reporter(`
 1:06 ${participant} wechselt in den Nahkampf.
+    `);
+    expect(
+      report[participant].children.hasOwnProperty(constants.swapWeapon)
+    ).toBe(true);
+  });
+
+  it("can parse ranged weapon swap", () => {
+    const [participant] = ["Magier"];
+    const [report] = reporter(`
+1:06 ${participant} wechselt in den Fernkampf.
     `);
     expect(
       report[participant].children.hasOwnProperty(constants.swapWeapon)
