@@ -53,12 +53,18 @@ export default function LootTable({
       <Body>
         {Object.entries(data).map(([key, values]) => (
           <ContentsRow>
-            <Header whiteSpace="nowrap" backgroundColor="white">
+            <Header
+              whiteSpace="nowrap"
+              backgroundColor="white"
+              fontWeight={key.includes("#") ? "bold" : "normal"}
+            >
               {key}
             </Header>
             {items.map((item) =>
               values.hasOwnProperty(item) ? (
-                <Cell>{values[item]}</Cell>
+                <Cell fontWeight={key.includes("#") ? "bold" : "normal"}>
+                  {values[item]}
+                </Cell>
               ) : (
                 <Cell></Cell>
               )

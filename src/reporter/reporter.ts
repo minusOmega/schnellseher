@@ -106,17 +106,25 @@ export function parseBattles(battles: Battles): [RawData[], Loot, string[]] {
       }
     }
   });
+
+  const lootSum: Record<string, number> = {};
   const loot = allLoot.reduce((total, current) => {
     for (const [participant, loot] of Object.entries(current)) {
       if (!total[participant]) total[participant] = {};
       for (const [item, amount] of Object.entries(loot)) {
         if (!categories.includes(item)) categories.push(item);
+
         if (total[participant][item]) total[participant][item] += amount;
         else total[participant][item] = amount;
+
+        if (lootSum[item]) lootSum[item] += amount;
+        else lootSum[item] = amount;
       }
     }
     return total;
   }, {});
+
+  loot["# Summe"] = lootSum;
   return [groups, loot, categories];
 }
 
