@@ -358,10 +358,10 @@ function aggregateData(values: Data[]): Aggregation {
   if (aggregated.minCrit === Infinity) aggregated.minCrit = 0;
   if (aggregated.minDmg === Infinity) aggregated.minDmg = 0;
 
-  const { attack, hit, dodged, healed, miss, crit } = aggregated;
-  aggregated.missPercent = (miss * 100) / attack || 0;
-  aggregated.dodgedPercent = (dodged * 100) / (hit + dodged) || 0;
-  aggregated.critPercent = (crit * 100) / (hit + healed) || 0;
+  const { attack, hit, dodged, healed, miss, crit, cast } = aggregated;
+  aggregated.missPercent = (miss / attack) * 100 || 0;
+  aggregated.dodgedPercent = (dodged / (hit + dodged + miss + cast)) * 100 || 0;
+  aggregated.critPercent = (crit / (hit + healed)) * 100 || 0;
 
   aggregated.rounds = Array.from(
     new Map(aggregated.rounds.map((item) => [item.id, item])).values()

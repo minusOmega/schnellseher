@@ -14,6 +14,7 @@ describe("test process cases", () => {
     );
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].hit).toBe(0);
+    expect((report[participant].children as Report)[weapon].miss).toBe(1);
   });
 
   it("can parse a successful buff", () => {
@@ -23,6 +24,7 @@ describe("test process cases", () => {
     );
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].cast).toBe(1);
+    expect((report[participant].children as Report)[weapon].miss).toBe(0);
   });
 
   it("can parse a failed DoT", () => {
@@ -34,6 +36,7 @@ describe("test process cases", () => {
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].dmg).toBe(0);
     expect((report[participant].children as Report)[weapon].cast).toBe(0);
+    expect((report[participant].children as Report)[weapon].miss).toBe(1);
   });
 
   it("can parse a successful DoT", () => {
@@ -349,6 +352,55 @@ describe("test round aggregation", () => {
     console.log(report);
     expect(report["Magier"].hit).toEqual(1);
     expect(report["Magier"].attack).toEqual(1);
+  });
+});
+
+describe("test percent calculation", () => {
+  it("calculates dodge percent of attacks", () => {
+    const [participant, weapon, target] = ["Magier", "Attack", "Gegner #1"];
+    const battle = `0:01 ${participant} [${weapon}] greift ${target} an: verursacht 2 Schaden.
+    0:02 ${participant} [${weapon}] greift ${target} an: verursacht 1 Schaden (1 Schaden geblockt).
+    0:03 ${participant} [${weapon}] greift ${target} an: kein Schaden (2 Schaden geblockt).
+    0:04 ${participant} [${weapon}] greift ${target} an: verursacht 1 Schaden (1 Schaden pariert).
+    0:05 ${participant} [${weapon}] greift ${target} an: kein Schaden (2 Schaden pariert).
+    0:06 ${participant} [${weapon}] greift ${target} an: verfehlt.
+    0:07 ${participant} [${weapon}] greift ${target} an: weicht aus.
+    0:08 ${participant} [${weapon}] greift ${target} an: verursacht 4 Schaden (krit. Treffer).`;
+    const [report] = reporter(battle);
+    const lines = battle.split("\n").length;
+    const { dodgedPercent, critPercent, missPercent } = report[participant];
+    expect(missPercent).toBe((1 / lines) * 100);
+    expect(dodgedPercent).toBe((1 / lines) * 100);
+    expect(critPercent).toBe((1 / 6) * 100);
+  });
+
+  it("calculates dodge percent of casts", () => {
+    const [participant, weapon, target] = ["Magier", "Debuff", "Gegner #1"];
+    const [report] = reporter(`
+    0:00 ${participant} zaubert [${weapon}] auf ${target}: weicht aus.
+    0:00 ${participant} zaubert [${weapon}] auf ${target}: verfehlt.
+    0:00 ${participant} zaubert [${weapon}] auf ${target}: erfolgreich.
+    0:00 [${weapon}] wirkt auf ${target}: verursacht 2 Schaden.
+    0:00 [${weapon}] wirkt auf ${target}: kein Schaden.`);
+    const {
+      attack,
+      dodged,
+      hit,
+      cast,
+      miss,
+      dodgedPercent,
+      critPercent,
+      missPercent,
+    } = report[participant];
+    expect(attack).toBe(5);
+    expect(hit + dodged + miss + cast).toBe(5);
+    expect(hit).toBe(2);
+    expect(dodged).toBe(1);
+    expect(cast).toBe(1);
+    expect(miss).toBe(1);
+    expect(dodgedPercent).toBe((1 / 5) * 100);
+    expect(missPercent).toBe((1 / 5) * 100);
+    expect(critPercent).toBe(0);
   });
 });
 
