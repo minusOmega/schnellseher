@@ -334,7 +334,6 @@ describe("test round aggregation", () => {
   Runde 2
   0:42 Magier [Dmg] greift Gegner an: verursacht 49 Schaden
       `);
-    console.log(report);
     expect(report["Magier"].hit).toEqual(2);
     expect(report["Magier"].miss).toEqual(1);
     expect(report["Magier"].attack).toEqual(3);
@@ -349,7 +348,6 @@ describe("test round aggregation", () => {
   Runde 2
   0:42 Magier [Dmg] greift Gegner an: verursacht 49 Schaden
       `);
-    console.log(report);
     expect(report["Magier"].hit).toEqual(1);
     expect(report["Magier"].attack).toEqual(1);
   });
@@ -491,7 +489,9 @@ describe("test multiple reports", () => {
     0:00 Magier zaubert [Orkan III] auf Gegner #1: erfolgreich.
     `;
 
-    const [battles] = parseBattles(parseInput(input));
+    const parsed = parseInput(input);
+    const [battles] = parseBattles(parsed);
+    expect(parsed.length).toBe(1);
     expect(battles.length).toBe(1);
     expect(battles[0].start).toBe("2022-10-15 02:12:53");
   });
@@ -537,10 +537,22 @@ describe("test multiple reports", () => {
     0:00 Magier zaubert [Orkan III] auf Gegner #1: erfolgreich.
     `;
 
-    const [battles] = parseBattles(parseInput(input));
+    const parsed = parseInput(input);
+    const [battles] = parseBattles(parsed);
+    expect(parsed.length).toBe(2);
     expect(battles.length).toBe(2);
     expect(battles[0].start).toBe("Kampfinformationen");
     expect(battles[1].start).toBe("2022-10-15 03:12:53");
+    expect(parsed[0].input).toBe(`
+    Runde 1
+    0:00 Magier zaubert [Orkan III] auf Gegner #1: erfolgreich.
+
+    `);
+    expect(parsed[1].input).toBe(`   	
+    
+    Runde 1
+    0:00 Magier zaubert [Orkan III] auf Gegner #1: erfolgreich.
+    `);
   });
 });
 

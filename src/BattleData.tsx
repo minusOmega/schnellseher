@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button, IconButton, styled } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { parseInput } from "./reporter/reporter";
 export const buttonBarId = "button-bar";
 
 const Textarea = styled("textarea")({
@@ -35,7 +36,7 @@ export function BattleData({
   onChange?: (value: string) => void;
 }) {
   const [report, setReport] = useState<string>(initial);
-
+  const battles = report ? parseInput(report) : undefined;
   return (
     <>
       <Textarea
@@ -50,7 +51,9 @@ export function BattleData({
             variant="contained"
             onClick={() => onChange && onChange(report)}
           >
-            Kampfbericht auswerten
+            {(battles?.length || 0) > 1
+              ? `${battles?.length} Kampfberichte auswerten`
+              : "Kampfbericht auswerten"}
           </Button>
           <IconButton
             color="primary"

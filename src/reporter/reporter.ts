@@ -29,6 +29,10 @@ type RegexGroups = {
 type Battle = {
   start: string;
   input: string;
+  from?: number;
+  to?: number;
+  linesFrom?: number;
+  linesTo?: number;
 };
 
 type Battles = Battle[];
@@ -48,16 +52,37 @@ export const constants = {
 };
 
 export function parseInput(input: string) {
-  const regex = /((?<=Kampfinformationen \[Kampfbeginn: ).*(?=]))/g;
+  const battleRegex = /((?<=Kampfinformationen \[Kampfbeginn: ).*(?=]))/g;
   const battles: Battles = [];
   const split = input.split(/(Kampfinformationen \[Kampfbeginn: .*])/g);
-  battles.push({ start: "Kampfinformationen", input: split[0] });
+  let from = 0;
+  let to = input.length;
+  let linesFrom = 0;
+  let linesTo = input.split(/\r\n|\r|\n/).length;
+  let battle = "";
+  let start = "Kampfinformationen";
   for (let index = 0; index < split.length; index++) {
     const element = split[index];
-    const match = regex.exec(element);
+    from = from + element.length;
+    linesFrom = linesFrom + element.split(/\r\n|\r|\n/).length;
+    const match = battleRegex.exec(element);
     if (match) {
-      battles.push({ start: match[0], input: split[index + 1] });
-    }
+      battle = split[index + 1];
+      start = match[0];
+    } else if (index === 0 && /(^|\r|\n|\r\n|\s)\d+:\d\d\s/gm.test(element)) {
+      battle = element;
+    } else continue;
+
+    to = from + battle.length;
+    linesTo = linesFrom + battle.split(/\r\n|\r|\n/).length;
+    battles.push({
+      start,
+      input: battle,
+      from,
+      to,
+      linesFrom,
+      linesTo,
+    });
   }
 
   return battles;
@@ -107,7 +132,6 @@ export function parseBattles(battles: Battles): [RawData[], Loot, string[]] {
       }
     }
   });
-
   const lootSum: Record<string, number> = {};
   const loot = allLoot.reduce((total, current) => {
     for (const [participant, loot] of Object.entries(current)) {
