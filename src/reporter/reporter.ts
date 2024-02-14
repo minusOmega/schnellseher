@@ -1,13 +1,4 @@
-import {
-  chain,
-  isEmpty,
-  unzip,
-  zipWith,
-  orderBy,
-  isArray,
-  fromPairs,
-  groupBy,
-} from "lodash";
+import { chain, isEmpty, unzip, zipWith, orderBy, isArray, fromPairs, groupBy } from "lodash";
 
 type RegexGroups = {
   time: string;
@@ -51,7 +42,17 @@ export const constants = {
   swapWeapon: "(Waffenwechsel)",
 };
 
-export function parseInput(input: string) {
+function splitAtLastOccurrence(str: string, word: string): [string, string] {
+  const index = str.lastIndexOf(word);
+  if (index === -1) {
+    return [str, ""];
+  }
+  const firstPart = str.substring(0, index);
+  const secondPart = str.substring(index + word.length);
+  return [firstPart, secondPart];
+}
+
+export function parseInput(input: string, showBandaging: boolean = false) {
   const battleRegex = /((?<=Kampfinformationen \[Kampfbeginn: ).*(?=]))/g;
   const battles: Battles = [];
   const split = input.split(/(Kampfinformationen \[Kampfbeginn: .*])/g);
@@ -72,6 +73,11 @@ export function parseInput(input: string) {
     } else if (index === 0 && /(^|\r|\n|\r\n|\s)\d+:\d\d\s/gm.test(element)) {
       battle = element;
     } else continue;
+
+    if (!showBandaging) {
+      const [before] = splitAtLastOccurrence(battle, "sinkt kampfunfähig zu Boden");
+      battle = before;
+    }
 
     to = from + battle.length;
     linesTo = linesFrom + battle.split(/\r\n|\r|\n/).length;
@@ -181,8 +187,7 @@ export function backtrackCaster(groups: RawData[]) {
       if (match) {
         const result = { ...element, participant: match.participant };
         return result;
-      } else
-        console.error(`Cannot find participant for ${JSON.stringify(element)}`);
+      } else console.error(`Cannot find participant for ${JSON.stringify(element)}`);
       return element;
     }
   });
@@ -213,9 +218,7 @@ export type Data = Numbers & {
 
 function parseTime(time: string): number {
   const [minutes, seconds] = time.split(":");
-  const round = Math.floor(
-    (parseInt(minutes) * 60 + parseInt(seconds)) / 24 + 1
-  );
+  const round = Math.floor((parseInt(minutes) * 60 + parseInt(seconds)) / 24 + 1);
   return round;
 }
 
@@ -268,8 +271,7 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
         break;
     }
 
-    if (target === undefined && defeated === constants.defeated)
-      target = participant;
+    if (target === undefined && defeated === constants.defeated) target = participant;
     if (weapon === undefined) {
       if (move === constants.move) {
         weapon = constants.moveWeapon;
@@ -316,10 +318,8 @@ export type Aggregation = Numbers & {
   dodgedPercent: number;
 };
 
-export const groupByBattle = (rounds: Round[]) =>
-  Object.entries(groupBy(rounds, "start"));
-export const roundsToString = (rounds: Round[]) =>
-  rounds.map(({ round }) => round).join(", ");
+export const groupByBattle = (rounds: Round[]) => Object.entries(groupBy(rounds, "start"));
+export const roundsToString = (rounds: Round[]) => rounds.map(({ round }) => round).join(", ");
 
 function ignoreForTotal(current: Data): boolean {
   return current.weapon !== undefined && current.weapon.startsWith("(");
@@ -417,20 +417,15 @@ export type OrderKey = keyof Aggregation;
 export type OrderFunc = (item: Aggregation) => OrderKey | number;
 export type Order = OrderKey | OrderFunc;
 
-export function orderReport(
-  input: Report,
-  order: [Order, OrderBy][] = [["dmg", "desc"]]
-): Report {
+export function orderReport(input: Report, order: [Order, OrderBy][] = [["dmg", "desc"]]): Report {
   const [iteratees, orders] = unzip(order) as [Order[], OrderBy[]];
-  const unsorted: [string, Group][] = Object.entries(input).map(
-    ([key, { children, ...rest }]) => [
-      key,
-      {
-        ...rest,
-        children: isArray(children) ? children : orderReport(children, order),
-      },
-    ]
-  );
+  const unsorted: [string, Group][] = Object.entries(input).map(([key, { children, ...rest }]) => [
+    key,
+    {
+      ...rest,
+      children: isArray(children) ? children : orderReport(children, order),
+    },
+  ]);
 
   const objectEntriesIterees = zipWith(iteratees, (iteratee) =>
     typeof iteratee === "string"
@@ -444,9 +439,10 @@ export function orderReport(
 
 export default function reporter(
   input: string,
-  groupBy: GroupBy = ["participant", "weapon"]
+  groupBy: GroupBy = ["participant", "weapon"],
+  showBandaging = false
 ): [Report, Loot, string[]] {
-  const [rawData, loot, categories] = parseBattles(parseInput(input));
+  const [rawData, loot, categories] = parseBattles(parseInput(input, showBandaging));
   const data = parseRegexGroups(backtrackCaster(rawData));
   const aggregation = aggregate(data, groupBy);
   return [aggregation, loot, categories];

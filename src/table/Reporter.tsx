@@ -10,13 +10,7 @@ import {
   Divider,
 } from "@mui/material";
 
-import reporter, {
-  OrderBy,
-  OrderFunc,
-  OrderKey,
-  GroupBy,
-  orderReport,
-} from "../reporter/reporter";
+import reporter, { OrderBy, OrderFunc, OrderKey, GroupBy, orderReport } from "../reporter/reporter";
 import { ContentsRow } from "./ContentsRow";
 import { ExpanderArrow, Hash } from "./Icons";
 import { ArrowDownward, ArrowUpward, Sort } from "@mui/icons-material";
@@ -96,33 +90,27 @@ const groupTypeMap: {
 export default function Reporter({ data }: { data: string }) {
   const [expand, setExpand] = useState(false);
   const [showMonster, setShowMonster] = useState(true);
-  const [sort, setSort] = useState<
-    { group: OrderKey; by: OrderBy; func?: OrderFunc }[]
-  >([]);
+  const [sort, setSort] = useState<{ group: OrderKey; by: OrderBy; func?: OrderFunc }[]>([]);
   const [groupType, setGroupType] = React.useState<string>("Participant");
   const [showLoot, setShowLoot] = React.useState<boolean>(false);
+  const [showBandaging, setShowBandaging] = React.useState<boolean>(false);
   const [showBattles, setShowBattles] = React.useState<boolean>(false);
   const { groupBy, type } = groupTypeMap[groupType];
 
-  const handleGroupTypeChange = (
-    event: React.MouseEvent<HTMLElement>,
-    newGroupType: string
-  ) => {
-    if (newGroupType !== null) setGroupType(newGroupType);
+  const handleGroupTypeChange = (_: React.MouseEvent<HTMLElement>, next: string) => {
+    if (next !== null) setGroupType(next);
   };
 
-  const handleShowLootChange = (
-    event: React.MouseEvent<HTMLElement>,
-    newView: boolean | null
-  ) => {
-    setShowLoot(newView !== null ? newView : false);
+  const handleShowLootChange = (_: React.MouseEvent<HTMLElement>, next: boolean | null) => {
+    setShowLoot(next !== null ? next : false);
   };
 
-  const handleShowBattlesChange = (
-    event: React.MouseEvent<HTMLElement>,
-    newView: boolean | null
-  ) => {
-    setShowBattles(newView !== null ? newView : false);
+  const handleShowBattlesChange = (_: React.MouseEvent<HTMLElement>, next: boolean | null) => {
+    setShowBattles(next !== null ? next : false);
+  };
+
+  const handleShowBandagingChange = (_: React.MouseEvent<HTMLElement>, next: boolean | null) => {
+    setShowBandaging(next !== null ? next : false);
   };
 
   const changeFilter = (group: OrderKey, func?: OrderFunc) => {
@@ -150,8 +138,8 @@ export default function Reporter({ data }: { data: string }) {
   });
 
   const [memoizedReport, memorizedLoot, memorizedItems] = useMemo(
-    () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy),
-    [data, showBattles, groupBy]
+    () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy, showBandaging),
+    [data, showBattles, groupBy, showBandaging]
   );
 
   const memoizedData = useMemo(
@@ -182,13 +170,23 @@ export default function Reporter({ data }: { data: string }) {
             <ToggleButton value={"Target"}>Eingehend</ToggleButton>
           </ToggleButtonGroup>
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+
+          <ToggleButtonGroup
+            exclusive
+            color="primary"
+            value={showBandaging}
+            onChange={handleShowBandagingChange}
+          >
+            <ToggleButton value={"Bandaging"}>Bandagieren</ToggleButton>
+          </ToggleButtonGroup>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
           <ToggleButtonGroup
             exclusive
             color="primary"
             value={showBattles}
             onChange={handleShowBattlesChange}
           >
-            <ToggleButton value={"Loot"}>Kämpfe</ToggleButton>
+            <ToggleButton value={"Battles"}>Kämpfe</ToggleButton>
           </ToggleButtonGroup>
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
           <ToggleButtonGroup
@@ -197,7 +195,7 @@ export default function Reporter({ data }: { data: string }) {
             value={showLoot}
             onChange={handleShowLootChange}
           >
-            <ToggleButton value={"Loot"}>Beuteverteilung</ToggleButton>
+            <ToggleButton value={"Loot"}>Beute</ToggleButton>
           </ToggleButtonGroup>
         </Paper>
       </ButtonBarContent>
@@ -210,13 +208,8 @@ export default function Reporter({ data }: { data: string }) {
                 {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
                 <ExpanderArrow expand={+expand} fontSize="small" />
               </IconButton>
-              <Tooltip
-                title={`Monster ${showMonster ? "ausblenden" : "einblenden"}`}
-              >
-                <IconButton
-                  onClick={() => setShowMonster(!showMonster)}
-                  size="small"
-                >
+              <Tooltip title={`Monster ${showMonster ? "ausblenden" : "einblenden"}`}>
+                <IconButton onClick={() => setShowMonster(!showMonster)} size="small">
                   {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
                   <Hash active={+showMonster} fontSize="inherit" />
                 </IconButton>
@@ -225,21 +218,15 @@ export default function Reporter({ data }: { data: string }) {
             <Column>Name</Column>
             <Column>Runden</Column>
             <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
-            <FilterColumn {...filterBy("dmg")}>
-              Schaden {type} (Abgewehrt)
-            </FilterColumn>
-            <FilterColumn
-              {...filterBy("rounds", ({ dmg, rounds }) => dmg / rounds.length)}
-            >
+            <FilterColumn {...filterBy("dmg")}>Schaden {type} (Abgewehrt)</FilterColumn>
+            <FilterColumn {...filterBy("rounds", ({ dmg, rounds }) => dmg / rounds.length)}>
               Schaden pro Runde
             </FilterColumn>
             <Column>min-max Schaden</Column>
             <Column>min-max Kritisch</Column>
             <FilterColumn {...filterBy("attack")}>Aktiv</FilterColumn>
             <FilterColumn {...filterBy("missPercent")}>Verfehlt</FilterColumn>
-            <FilterColumn {...filterBy("dodgedPercent")}>
-              Ausgewichen
-            </FilterColumn>
+            <FilterColumn {...filterBy("dodgedPercent")}>Ausgewichen</FilterColumn>
             <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
             <FilterColumn {...filterBy("critPercent")}>Kritisch</FilterColumn>
           </ContentsRow>
