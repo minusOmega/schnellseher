@@ -47,6 +47,10 @@ export function Aggregated({
   dodged,
   dodgedPercent,
   heal,
+  blockPercent,
+  parryPercent,
+  blocked,
+  parried,
 }: Group) {
   const groupedRounds = groupByBattle(rounds);
   return (
@@ -58,9 +62,7 @@ export function Aggregated({
               {groupedRounds.length === 1
                 ? roundsToString(rounds)
                 : groupedRounds.map(([key, value]) => (
-                    <p>{`${key.split(" ").at(-1)}: [${roundsToString(
-                      value
-                    )}]`}</p>
+                    <p>{`${key.split(" ").at(-1)}: [${roundsToString(value)}]`}</p>
                   ))}
             </>
           }
@@ -74,9 +76,7 @@ export function Aggregated({
         {dmg} ({block + parry})
       </Cell>
 
-      <Cell backgroundColor={colorMap[group]}>
-        {(dmg / rounds.length).toFixed(1)}
-      </Cell>
+      <Cell backgroundColor={colorMap[group]}>{(dmg / rounds.length).toFixed(1)}</Cell>
       <Cell backgroundColor={colorMap[group]}>
         {minDmg}-{maxDmg}
       </Cell>
@@ -87,9 +87,7 @@ export function Aggregated({
       <Cell backgroundColor={colorMap[group]}>
         <Spaced>
           <Percent>
-            {Number.isFinite(missPercent)
-              ? missPercent.toFixed(1) + "%"
-              : "Fehler"}
+            {Number.isFinite(missPercent) ? missPercent.toFixed(1) + "%" : "Fehler"}
           </Percent>
           <span>({miss})</span>
         </Spaced>
@@ -97,9 +95,7 @@ export function Aggregated({
       <Cell backgroundColor={colorMap[group]}>
         <Spaced>
           <Percent>
-            {Number.isFinite(dodgedPercent)
-              ? dodgedPercent.toFixed(1) + "%"
-              : "Fehler"}
+            {Number.isFinite(dodgedPercent) ? dodgedPercent.toFixed(1) + "%" : "Fehler"}
           </Percent>
           <span>({dodged})</span>
         </Spaced>
@@ -118,11 +114,25 @@ export function Aggregated({
       <Cell backgroundColor={colorMap[group]}>
         <Spaced>
           <Percent>
-            {Number.isFinite(critPercent)
-              ? critPercent.toFixed(1) + "%"
-              : "Fehler"}
+            {Number.isFinite(critPercent) ? critPercent.toFixed(1) + "%" : "Fehler"}
           </Percent>
           <span>({crit})</span>
+        </Spaced>
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        <Spaced>
+          <Percent>
+            {Number.isFinite(blockPercent) ? blockPercent.toFixed(1) + "%" : "Fehler"}
+          </Percent>
+          <span>({blocked})</span>
+        </Spaced>
+      </Cell>
+      <Cell backgroundColor={colorMap[group]}>
+        <Spaced>
+          <Percent>
+            {Number.isFinite(parryPercent) ? parryPercent.toFixed(1) + "%" : "Fehler"}
+          </Percent>
+          <span>({parried})</span>
         </Spaced>
       </Cell>
     </>

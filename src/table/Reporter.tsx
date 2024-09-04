@@ -21,7 +21,7 @@ import LootTable from "./LootTable";
 const Table = styled("table")({
   backgroundColor: "white",
   display: "grid",
-  gridTemplateColumns: "repeat(13,auto)",
+  gridTemplateColumns: "repeat(15,auto)",
   width: "fit-content",
   flex: "auto",
 });
@@ -229,6 +229,8 @@ export default function Reporter({ data }: { data: string }) {
             <FilterColumn {...filterBy("dodgedPercent")}>Ausgewichen</FilterColumn>
             <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
             <FilterColumn {...filterBy("critPercent")}>Kritisch</FilterColumn>
+            <FilterColumn {...filterBy("blocked")}>Blockiert</FilterColumn>
+            <FilterColumn {...filterBy("parried")}>Parriert</FilterColumn>
           </ContentsRow>
         </Head>
         <Body>

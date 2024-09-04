@@ -1,17 +1,8 @@
-import reporter, {
-  Report,
-  parseBattles,
-  parseInput,
-  roundsToString,
-  constants,
-} from "./reporter";
-
+import reporter, { Report, parseBattles, parseInput, roundsToString, constants } from "./reporter";
 describe("test process cases", () => {
   it("can parse a failed buff", () => {
     const [participant, weapon] = ["Magier", "Buff"];
-    const [report] = reporter(
-      `0:00 ${participant} zaubert [${weapon}] auf Verbündeter: verfehlt.`
-    );
+    const [report] = reporter(`0:00 ${participant} zaubert [${weapon}] auf Verbündeter: verfehlt.`);
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].hit).toBe(0);
     expect((report[participant].children as Report)[weapon].miss).toBe(1);
@@ -19,9 +10,7 @@ describe("test process cases", () => {
 
   it("can parse a successful buff", () => {
     const [participant, weapon] = ["Magier", "Buff"];
-    const [report] = reporter(
-      `0:00 Magier zaubert [${weapon}] auf Verbündeter: erfolgreich.`
-    );
+    const [report] = reporter(`0:00 Magier zaubert [${weapon}] auf Verbündeter: erfolgreich.`);
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].cast).toBe(1);
     expect((report[participant].children as Report)[weapon].miss).toBe(0);
@@ -29,9 +18,7 @@ describe("test process cases", () => {
 
   it("can parse a failed DoT", () => {
     const [participant, weapon] = ["Magier", "DoT"];
-    const [report] = reporter(
-      `0:00 Magier zaubert [${weapon}] auf Gegner #1: verfehlt.`
-    );
+    const [report] = reporter(`0:00 Magier zaubert [${weapon}] auf Gegner #1: verfehlt.`);
 
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].dmg).toBe(0);
@@ -66,9 +53,7 @@ describe("test process cases", () => {
 
   it("can parse a missed attack", () => {
     const [participant, weapon] = ["Magier", "Attack"];
-    const [report] = reporter(
-      `0:42 Magier [${weapon}] greift Gegner #1 an: verfehlt.`
-    );
+    const [report] = reporter(`0:42 Magier [${weapon}] greift Gegner #1 an: verfehlt.`);
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].dmg).toBe(0);
     expect((report[participant].children as Report)[weapon].hit).toBe(0);
@@ -77,9 +62,7 @@ describe("test process cases", () => {
 
   it("can parse a failed attack", () => {
     const [participant, weapon] = ["Magier", "Attack"];
-    const [report] = reporter(
-      `0:42 Magier [${weapon}] greift Gegner #1 an: weicht aus.`
-    );
+    const [report] = reporter(`0:42 Magier [${weapon}] greift Gegner #1 an: weicht aus.`);
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].hit).toBe(0);
     expect((report[participant].children as Report)[weapon].dmg).toBe(0);
@@ -189,9 +172,7 @@ describe("test process cases", () => {
 
   it("can parse a failed regeneration", () => {
     const [participant, weapon] = ["Magier", "Regeneration"];
-    const [report] = reporter(
-      `0:00 Magier zaubert [${weapon}] auf Verbündeter: verfehlt.`
-    );
+    const [report] = reporter(`0:00 Magier zaubert [${weapon}] auf Verbündeter: verfehlt.`);
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].heal).toBe(0);
     expect((report[participant].children as Report)[weapon].hit).toBe(0);
@@ -201,18 +182,14 @@ describe("test process cases", () => {
     const [participant] = ["Magier"];
     const [report] = reporter(`
     0:00 ${participant} nähert sich Feind.`);
-    expect(
-      report[participant].children.hasOwnProperty(constants.moveWeapon)
-    ).toBe(true);
+    expect(report[participant].children.hasOwnProperty(constants.moveWeapon)).toBe(true);
   });
 
   it("can parse defeat", () => {
     const [participant] = ["Magier"];
     const [report] = reporter(`
     0:00 ${participant} sinkt kampfunfähig zu Boden.`);
-    expect(
-      report[participant].children.hasOwnProperty(constants.defeatedWeapon)
-    ).toBe(true);
+    expect(report[participant].children.hasOwnProperty(constants.defeatedWeapon)).toBe(true);
   });
 
   it("can parse mele weapon swap", () => {
@@ -220,9 +197,7 @@ describe("test process cases", () => {
     const [report] = reporter(`
 1:06 ${participant} wechselt in den Nahkampf.
     `);
-    expect(
-      report[participant].children.hasOwnProperty(constants.swapWeapon)
-    ).toBe(true);
+    expect(report[participant].children.hasOwnProperty(constants.swapWeapon)).toBe(true);
   });
 
   it("can parse ranged weapon swap", () => {
@@ -230,9 +205,7 @@ describe("test process cases", () => {
     const [report] = reporter(`
 1:06 ${participant} wechselt in den Fernkampf.
     `);
-    expect(
-      report[participant].children.hasOwnProperty(constants.swapWeapon)
-    ).toBe(true);
+    expect(report[participant].children.hasOwnProperty(constants.swapWeapon)).toBe(true);
   });
 });
 
@@ -247,12 +220,8 @@ describe("test round aggregation", () => {
   0:54 Magier [Dmg] greift Gegner an: verursacht 49 Schaden
       `);
     expect(roundsToString(report["Magier"].rounds)).toEqual("1, 2, 3");
-    expect(
-      roundsToString((report["Magier"].children as Report)["Buff"].rounds)
-    ).toEqual("1");
-    expect(
-      roundsToString((report["Magier"].children as Report)["Dmg"].rounds)
-    ).toEqual("2, 3");
+    expect(roundsToString((report["Magier"].children as Report)["Buff"].rounds)).toEqual("1");
+    expect(roundsToString((report["Magier"].children as Report)["Dmg"].rounds)).toEqual("2, 3");
   });
 
   it("combines rounds with multiple attacks", () => {
@@ -297,18 +266,14 @@ describe("test round aggregation", () => {
   2:12 Magier [${Spells[Spells.Dmg]}] greift Gegner an: verursacht 84 Schaden.
         `);
     expect(roundsToString(report["Magier"].rounds)).toEqual("1, 2, 3, 4, 5, 6");
-    expect(
-      roundsToString((report["Magier"].children as Report)["Buff"].rounds)
-    ).toEqual("1, 2, 6");
-    expect(
-      roundsToString((report["Magier"].children as Report)["Debuff"].rounds)
-    ).toEqual("1, 2, 4");
-    expect(
-      roundsToString((report["Magier"].children as Report)["Heal"].rounds)
-    ).toEqual("1, 3, 5");
-    expect(
-      roundsToString((report["Magier"].children as Report)["Dmg"].rounds)
-    ).toEqual("2, 3, 4, 6");
+    expect(roundsToString((report["Magier"].children as Report)["Buff"].rounds)).toEqual("1, 2, 6");
+    expect(roundsToString((report["Magier"].children as Report)["Debuff"].rounds)).toEqual(
+      "1, 2, 4"
+    );
+    expect(roundsToString((report["Magier"].children as Report)["Heal"].rounds)).toEqual("1, 3, 5");
+    expect(roundsToString((report["Magier"].children as Report)["Dmg"].rounds)).toEqual(
+      "2, 3, 4, 6"
+    );
   });
 
   it("combines rounds 1...150", () => {
@@ -320,9 +285,7 @@ describe("test round aggregation", () => {
   59:36 Magier [${spell}] greift Gegner an: verursacht 12 Schaden
         `);
     expect(roundsToString(report["Magier"].rounds)).toEqual("1, 150");
-    expect(
-      roundsToString((report["Magier"].children as Report)[spell].rounds)
-    ).toEqual("1, 150");
+    expect(roundsToString((report["Magier"].children as Report)[spell].rounds)).toEqual("1, 150");
   });
 
   it("combines hits and misses", () => {
@@ -380,23 +343,16 @@ describe("test percent calculation", () => {
     0:00 ${participant} zaubert [${weapon}] auf ${target}: erfolgreich.
     0:00 [${weapon}] wirkt auf ${target}: verursacht 2 Schaden.
     0:00 [${weapon}] wirkt auf ${target}: kein Schaden.`);
-    const {
-      attack,
-      dodged,
-      hit,
-      cast,
-      miss,
-      dodgedPercent,
-      critPercent,
-      missPercent,
-    } = report[participant];
+    const { attack, dodged, hit, cast, miss, dodgedPercent, critPercent, missPercent } =
+      report[participant];
     expect(attack).toBe(5);
-    expect(hit + dodged + miss + cast).toBe(5);
     expect(hit).toBe(2);
     expect(dodged).toBe(1);
     expect(cast).toBe(1);
     expect(miss).toBe(1);
-    expect(dodgedPercent).toBe((1 / 5) * 100);
+    expect(hit + dodged + cast).toBe(4);
+    expect(dodgedPercent).toBe((1 / 4) * 100);
+    expect(hit + dodged + miss + cast).toBe(5);
     expect(missPercent).toBe((1 / 5) * 100);
     expect(critPercent).toBe(0);
   });

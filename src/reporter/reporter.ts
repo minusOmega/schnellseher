@@ -203,7 +203,9 @@ export type Numbers = {
   miss: number;
   dodged: number;
   attack: number;
+  blocked: number;
   block: number;
+  parried: number;
   parry: number;
 };
 
@@ -246,6 +248,8 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
     let cast = 0;
     let miss = 0;
     let dodged = 0;
+    let blocked = block !== undefined ? 1 : 0;
+    let parried = parry !== undefined ? 1 : 0;
     let crit = typ === "krit. Treffer" || typ === "exzellenter Treffer" ? 1 : 0;
     let attack = 0;
     switch (hit) {
@@ -299,6 +303,8 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       cast,
       attack,
       healed,
+      blocked,
+      parried,
       dmg: parseInt(damage) | 0,
       heal: parseInt(heal) | 0,
       block: parseInt(block) | 0,
@@ -316,6 +322,8 @@ export type Aggregation = Numbers & {
   critPercent: number;
   missPercent: number;
   dodgedPercent: number;
+  blockPercent: number;
+  parryPercent: number;
 };
 
 export const groupByBattle = (rounds: Round[]) => Object.entries(groupBy(rounds, "start"));
@@ -353,6 +361,8 @@ function aggregateData(values: Data[]): Aggregation {
       total.dmg += current.dmg;
       total.heal += current.heal;
       total.block += current.block;
+      total.blocked += current.blocked;
+      total.parried += current.parried;
       total.parry += current.parry;
       return total;
     },
@@ -372,20 +382,27 @@ function aggregateData(values: Data[]): Aggregation {
       heal: 0,
       healed: 0,
       block: 0,
+      blocked: 0,
+      parried: 0,
       parry: 0,
       critPercent: 0,
       missPercent: 0,
       dodgedPercent: 0,
+      blockPercent: 0,
+      parryPercent: 0,
     }
   );
 
   if (aggregated.minCrit === Infinity) aggregated.minCrit = 0;
   if (aggregated.minDmg === Infinity) aggregated.minDmg = 0;
 
-  const { attack, hit, dodged, healed, miss, crit, cast } = aggregated;
+  const { attack, hit, dodged, healed, miss, crit, cast, blocked, parried } = aggregated;
+  console.log(attack, hit, dodged, miss, cast);
   aggregated.missPercent = (miss / attack) * 100 || 0;
-  aggregated.dodgedPercent = (dodged / (hit + dodged + miss + cast)) * 100 || 0;
+  aggregated.dodgedPercent = (dodged / (hit + dodged /*+ miss*/ + cast)) * 100 || 0;
   aggregated.critPercent = (crit / (hit + healed)) * 100 || 0;
+  aggregated.blockPercent = (blocked / hit) * 100 || 0;
+  aggregated.parryPercent = (parried / hit) * 100 || 0;
 
   aggregated.rounds = Array.from(
     new Map(aggregated.rounds.map((item) => [item.id, item])).values()
