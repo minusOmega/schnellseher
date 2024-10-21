@@ -328,10 +328,9 @@ describe("test percent calculation", () => {
     0:07 ${participant} [${weapon}] greift ${target} an: weicht aus.
     0:08 ${participant} [${weapon}] greift ${target} an: verursacht 4 Schaden (krit. Treffer).`;
     const [report] = reporter(battle);
-    const lines = battle.split("\n").length;
     const { dodgedPercent, critPercent, missPercent } = report[participant];
-    expect(missPercent).toBe((1 / lines) * 100);
-    expect(dodgedPercent).toBe((1 / lines) * 100);
+    expect(missPercent).toBe((1 / 8) * 100);
+    expect(dodgedPercent).toBe((1 / 7) * 100); // does not count miss (verfehlt)
     expect(critPercent).toBe((1 / 6) * 100);
   });
 

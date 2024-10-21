@@ -47,8 +47,8 @@ function splitAtLastOccurrence(str: string, word: string): [string, string] {
   if (index === -1) {
     return [str, ""];
   }
-  const firstPart = str.substring(0, index);
-  const secondPart = str.substring(index + word.length);
+  const firstPart = str.substring(0, index + word.length);
+  const secondPart = str.substring(index);
   return [firstPart, secondPart];
 }
 
