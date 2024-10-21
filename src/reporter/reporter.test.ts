@@ -552,4 +552,23 @@ ${second}	75 Gold, 1 Sternenstaub, 2 Sand
     expect(loot[second]).toHaveProperty("Sand");
     expect(loot[second]).toHaveProperty("Einfacher Hartleder-Buckler (20)");
   });
+
+  it("can parse loot with space in the name", () => {
+    const [first, second] = ["Magier", "Kämpfer"];
+    const input = `
+Kampfinformationen [Kampfbeginn: 2022-12-06 07:28:13]    
+Sieger	Beuteverteilung
+${first}	1 Goblinknochen, 1 Klebriger Stein
+${second}	3 Schwarze Schminke, 1 Leinensack, 1 Sorandil-Münzbarren
+Kampfereignisse (Log)   
+Kampfinformationen [Kampfbeginn: 2022-12-06 03:31:20]   	
+Sieger	Beuteverteilung
+${first}	10 Koboldbeere, 2 Setzling eines Baumkobolds
+${second}	11 Koboldbeere, 3 Setzling eines Baumkobolds
+`;
+
+    const [, loot] = parseBattles(parseInput(input));
+    expect(loot[second]).toHaveProperty("Koboldbeere");
+    expect(loot[second]).toHaveProperty("Schwarze Schminke");
+  });
 });

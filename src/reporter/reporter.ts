@@ -105,7 +105,7 @@ function parseLoot({ input }: Battle): Loot {
     if (match?.groups) {
       const { participant, loot } = match.groups;
       result = loot.split(", ").reduce((total: Loot, current) => {
-        const [amount, item] = current.split(" ");
+        const [amount, item] = current.split(/\s(.*)/s);
         let parsedAmount = parseInt(amount);
         const parsedItem = isNaN(parsedAmount) ? current : item;
         parsedAmount = isNaN(parsedAmount) ? 1 : parsedAmount;
