@@ -130,7 +130,7 @@ export function parseBattles(battles: Battles): [RawData[], Loot, string[]] {
     const { input, start } = battle;
     allLoot.push(parseLoot(battle));
     let regex =
-      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:[a-z]+\s){1,2})))(?<target>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})?(?:.*?: )?(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\()\d+(?=\sSchaden geblockt\)\.))|(?<parry>(?<=\()\d+(?=\sSchaden pariert\)\.)))?/g;
+      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d+|(?:\s|-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:[a-z]+\s){1,2})))(?<target>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})?(?:.*?: )?(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\()\d+(?=\sSchaden geblockt\)\.))|(?<parry>(?<=\()\d+(?=\sSchaden pariert\)\.)))?/g;
     let match: RegExpExecArray | null;
     while ((match = regex.exec(input))) {
       if (match?.groups) {
@@ -397,7 +397,6 @@ function aggregateData(values: Data[]): Aggregation {
   if (aggregated.minDmg === Infinity) aggregated.minDmg = 0;
 
   const { attack, hit, dodged, healed, miss, crit, cast, blocked, parried } = aggregated;
-  console.log(attack, hit, dodged, miss, cast);
   aggregated.missPercent = (miss / attack) * 100 || 0;
   aggregated.dodgedPercent = (dodged / (hit + dodged /*+ miss*/ + cast)) * 100 || 0;
   aggregated.critPercent = (crit / (hit + healed)) * 100 || 0;

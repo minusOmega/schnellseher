@@ -207,6 +207,42 @@ describe("test process cases", () => {
     `);
     expect(report[participant].children.hasOwnProperty(constants.swapWeapon)).toBe(true);
   });
+
+  it("can parse multiple participants", () => {
+    const [participant] = ["Magier"];
+    const [report] = reporter(`
+      0:00 Magier zaubert [Buff] auf Verbündeter: erfolgreich.
+      0:00 Zombie #1 nähert sich ${participant}.
+      0:00 Zombie #2 nähert sich ${participant}.
+      0:00 Zombie #3 nähert sich ${participant}.
+      0:00 Zombie #4 nähert sich ${participant}.
+      0:00 Zombie #5 nähert sich ${participant}.
+      0:00 Zombie #6 nähert sich ${participant}.
+      0:00 Zombie #7 nähert sich ${participant}.
+      0:00 Zombie #8 nähert sich ${participant}.
+      0:00 Zombie #9 nähert sich ${participant}.
+      0:00 Zombie #10 nähert sich ${participant}.
+      0:00 Zombie #11 nähert sich ${participant}.
+      0:00 Zombie #12 nähert sich ${participant}.
+      0:00 Zombie #13 nähert sich ${participant}.
+          `);
+    expect(Object.keys(report)).toEqual([
+      "Magier",
+      "Zombie #1",
+      "Zombie #2",
+      "Zombie #3",
+      "Zombie #4",
+      "Zombie #5",
+      "Zombie #6",
+      "Zombie #7",
+      "Zombie #8",
+      "Zombie #9",
+      "Zombie #10",
+      "Zombie #11",
+      "Zombie #12",
+      "Zombie #13",
+    ]);
+  });
 });
 
 describe("test round aggregation", () => {
