@@ -6,7 +6,7 @@ export const buttonBarId = "button-bar";
 
 const Textarea = styled("textarea")({
   minWidth: 229.9,
-  whiteSpace: "pre",
+  whitespace: "pre",
   overflowWrap: "normal",
   marginLeft: 10,
   marginRight: 10,
@@ -47,10 +47,7 @@ export function BattleData({
       />
       <ButtonBar id={buttonBarId}>
         <ButtonGroup>
-          <Button
-            variant="contained"
-            onClick={() => onChange && onChange(report)}
-          >
+          <Button variant="contained" onClick={() => onChange && onChange(report)}>
             {(battles?.length || 0) > 1
               ? `${battles?.length} Kampfberichte auswerten`
               : "Kampfbericht auswerten"}

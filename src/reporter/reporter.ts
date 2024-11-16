@@ -96,41 +96,71 @@ export function parseInput(input: string, showBandaging: boolean = false) {
 
 export type Loot = Record<string, Record<string, number>>;
 
-function parseLoot({ input }: Battle): Loot {
-  let regex =
-    /(?<participant>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d|(?: |-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})\t(?<loot>\d* .*)\n/g;
+const participant =
+  /[A-ZÄÖÜß][a-zäöüß]+(?:(?:(?: |-)[a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+))?/
+    .source;
+const participantOrMonster = new RegExp(`${participant}(?: #\\d+)?`).source;
+const loot = /[^\t\n]*/.source;
+const value = /\t\d* [^\n]*/.source;
+const time = /\d+:\d\d/.source;
+const weapon = /(?<=\[).+?(?=\])/.source;
+const numbers = /\d+/.source;
+const hit = /[a-z]+\s?[A-Za-z]+?(?=\.| )/.source;
+const typ = /(?<=\()exzellenter Treffer|krit. Treffer(?=\))/.source;
+const block = /(?<=\()\d+(?=\sSchaden geblockt\)\.)/.source;
+const parry = /(?<=\()\d+(?=\sSchaden pariert\)\.)/.source;
+
+function parseLoot({ input }: Battle): { value: Loot; loot: Loot } {
+  let regex = new RegExp(
+    `^(?!Sieger\tBeuteverteilung)(?<participant>${participant})\t(?<loot>${loot})(?:\n|(?<value>${value}))?\n`,
+    "gm"
+  );
   let match: RegExpExecArray | null;
-  let result: Loot = {};
+  let collectedLoot: Loot = {};
+  let collectedValue: Loot = {};
   while ((match = regex.exec(input))) {
     if (match?.groups) {
-      const { participant, loot } = match.groups;
-      result = loot.split(", ").reduce((total: Loot, current) => {
+      const { participant, loot, value } = match.groups;
+      const collect = (total: Loot, current: string) => {
         const [amount, item] = current.split(/\s(.*)/s);
         let parsedAmount = parseInt(amount);
         const parsedItem = isNaN(parsedAmount) ? current : item;
+        if (!parsedItem) return total;
         parsedAmount = isNaN(parsedAmount) ? 1 : parsedAmount;
         if (total[participant]) total[participant][parsedItem] = parsedAmount;
         else total[participant] = { [parsedItem]: parsedAmount };
         return total;
-      }, result);
+      };
+
+      collectedLoot = loot.split(", ").reduce(collect, collectedLoot);
+      collectedValue = (value || "")
+        .replace(/^\t+/, "")
+        .split(", ")
+        .reduce(collect, collectedValue);
     }
   }
-  return result;
+  return { loot: collectedLoot, value: collectedValue };
 }
 
-// regex101 link:
-// https://regex101.com/r/Apd1we/1
-// regex101 delete regex link:
-// https://regex101.com/delete/SEYXxm7h7S7FuH6gz9p12rRz
-export function parseBattles(battles: Battles): [RawData[], Loot, string[]] {
+export function parseBattles(battles: Battles): {
+  groups: RawData[];
+  value: Loot;
+  loot: Loot;
+  categories: string[];
+  descriptions: string[];
+} {
   const groups: RawData[] = [];
   const allLoot: Loot[] = [];
-  const categories: string[] = [];
+  const values: Loot[] = [];
   battles.forEach((battle) => {
     const { input, start } = battle;
-    allLoot.push(parseLoot(battle));
-    let regex =
-      /(?<time>\d+:\d\d) (?<participant>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d+|(?:\s|-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>(?<=\[).+?(?=\]))(?:]\s(?:[a-z]+\s){1,2})))(?<target>[A-ZÄÖÜß][a-zäöüß]+(?=\W)(?:\s#\d|(?:\s|-)[A-ZÄÖÜß][a-zäöüß]+|){1,2})?(?:.*?: )?(?:(?:verursacht (?<damage>\d+))|(?:heilt (?<heal>\d+)))?(?<hit>[a-z]+\s?[A-Za-z]+?(?=\.| ))?(?:\s[a-zA-Z]+\s\()?(?<typ>(?<=\()exzellenter Treffer|krit. Treffer(?=\)))?(?:.+\()?(?:(?<block>(?<=\()\d+(?=\sSchaden geblockt\)\.))|(?<parry>(?<=\()\d+(?=\sSchaden pariert\)\.)))?/g;
+    const { loot, value } = parseLoot(battle);
+    allLoot.push(loot);
+    values.push(value);
+    let regex = new RegExp(
+      `(?<time>${time}) (?<participant>${participantOrMonster})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (?:Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>${weapon})(?:]\\s(?:[a-z]+\\s){1,2})))(?<target>${participantOrMonster})?(?:.*?: )?(?:(?:verursacht (?<damage>${numbers}))|(?:heilt (?<heal>${numbers})))?(?<hit>${hit})?(?:\\s[a-zA-Z]+\\s\\()?(?<typ>${typ})?(?:.+\\()?(?:(?<block>${block})|(?<parry>${parry}))?`,
+      "g"
+    );
     let match: RegExpExecArray | null;
     while ((match = regex.exec(input))) {
       if (match?.groups) {
@@ -138,25 +168,36 @@ export function parseBattles(battles: Battles): [RawData[], Loot, string[]] {
       }
     }
   });
-  const lootSum: Record<string, number> = {};
-  const loot = allLoot.reduce((total, current) => {
-    for (const [participant, loot] of Object.entries(current)) {
-      if (!total[participant]) total[participant] = {};
-      for (const [item, amount] of Object.entries(loot)) {
-        if (!categories.includes(item)) categories.push(item);
 
-        if (total[participant][item]) total[participant][item] += amount;
-        else total[participant][item] = amount;
+  const collect = (input: Loot[]): [Loot, string[]] => {
+    const names: string[] = [];
+    const sum: Record<string, number> = {};
+    if (!input) return [{}, names];
 
-        if (lootSum[item]) lootSum[item] += amount;
-        else lootSum[item] = amount;
+    const output = input.reduce((total, current) => {
+      for (const [participant, loot] of Object.entries(current)) {
+        if (!total[participant]) total[participant] = {};
+        for (const [item, amount] of Object.entries(loot)) {
+          if (!names.includes(item)) names.push(item);
+
+          if (total[participant][item]) total[participant][item] += amount;
+          else total[participant][item] = amount;
+
+          if (sum[item]) sum[item] += amount;
+          else sum[item] = amount;
+        }
       }
-    }
-    return total;
-  }, {});
+      return total;
+    }, {});
 
-  loot["# Summe"] = lootSum;
-  return [groups, loot, categories];
+    output["# Summe"] = sum;
+    return [output, names];
+  };
+
+  const [loot, categories] = collect(allLoot);
+  const [value, descriptions] = collect(values);
+
+  return { groups, value, loot, categories, descriptions };
 }
 
 const getPredecessorIfCaster = (current: RawData, all: RawData[]) => {
@@ -457,9 +498,11 @@ export default function reporter(
   input: string,
   groupBy: GroupBy = ["participant", "weapon"],
   showBandaging = false
-): [Report, Loot, string[]] {
-  const [rawData, loot, categories] = parseBattles(parseInput(input, showBandaging));
-  const data = parseRegexGroups(backtrackCaster(rawData));
+): [Report, Loot, string[], Loot, string[]] {
+  const { categories, groups, loot, value, descriptions } = parseBattles(
+    parseInput(input, showBandaging)
+  );
+  const data = parseRegexGroups(backtrackCaster(groups));
   const aggregation = aggregate(data, groupBy);
-  return [aggregation, loot, categories];
+  return [aggregation, loot, categories, value, descriptions];
 }

@@ -16,7 +16,7 @@ import { ExpanderArrow, Hash } from "./Icons";
 import { ArrowDownward, ArrowUpward, Sort } from "@mui/icons-material";
 import ButtonBarContent from "../ButtonBarContent";
 import { Row } from "./Row";
-import LootTable from "./LootTable";
+import Loot from "./LootTable";
 
 const Table = styled("table")({
   backgroundColor: "white",
@@ -47,6 +47,11 @@ const Column = styled("th")({
   top: 0,
   backgroundColor: "white",
   zIndex: 1,
+});
+
+const LootTable = styled("div")({
+  display: "flex",
+  marginLeft: 48,
 });
 
 const FilterArrow = ({ order }: { order?: OrderBy }) => {
@@ -137,10 +142,11 @@ export default function Reporter({ data }: { data: string }) {
     onChange: changeFilter,
   });
 
-  const [memoizedReport, memorizedLoot, memorizedItems] = useMemo(
-    () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy, showBandaging),
-    [data, showBattles, groupBy, showBandaging]
-  );
+  const [memoizedReport, memorizedLoot, memorizedItems, memorizedValue, memorizedDescriptions] =
+    useMemo(
+      () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy, showBandaging),
+      [data, showBattles, groupBy, showBandaging]
+    );
 
   const memoizedData = useMemo(
     () =>
@@ -199,7 +205,18 @@ export default function Reporter({ data }: { data: string }) {
           </ToggleButtonGroup>
         </Paper>
       </ButtonBarContent>
-      {showLoot && <LootTable data={memorizedLoot} items={memorizedItems} />}
+
+      <LootTable>
+        {showLoot && <Loot name="Beute" data={memorizedLoot} items={memorizedItems} />}
+        {showLoot && (
+          <Loot
+            name="Werte"
+            data={memorizedValue}
+            items={memorizedDescriptions}
+            showNames={false}
+          />
+        )}
+      </LootTable>
       <Table>
         <Head>
           <ContentsRow>

@@ -164,7 +164,7 @@ export function Row({
           )}
         </Cell>
         <Header
-          whiteSpace={values.group !== "weapon" ? "nowrap" : undefined}
+          whitespace={values.group !== "weapon" ? "nowrap" : undefined}
           backgroundColor={colorMap[values.group]}
         >
           {by}

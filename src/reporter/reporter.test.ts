@@ -245,6 +245,30 @@ describe("test process cases", () => {
   });
 });
 
+it("can parse short and long names", () => {
+  const input = `
+    0:00 Magier zaubert [Buff] auf Verbündeter: erfolgreich.
+    0:00 Magnus nähert sich Ork Anführer #1.
+    0:00 Magier mit Hut nähert sich Zombie #4.
+    0:00 Magier mit großem Hut nähert sich Zombie #4.
+    0:00 Meister Magier nähert sich Zombie #4.
+    0:00 Meister Magier Magnus Magie nähert sich Zombie #4.
+    0:00 Meister-Magier Magnus Magie nähert sich Zombie #4.
+    0:12 Ork-Anführer #1 nähert sich Magier.
+    `;
+  const [report] = reporter(input);
+  expect(Object.keys(report)).toEqual([
+    "Magier",
+    "Magnus",
+    "Magier mit Hut",
+    "Magier mit großem Hut",
+    "Meister Magier",
+    "Meister Magier Magnus Magie",
+    "Meister-Magier Magnus Magie",
+    "Ork-Anführer #1",
+  ]);
+});
+
 describe("test round aggregation", () => {
   it("combines rounds", () => {
     const [report] = reporter(`
@@ -481,10 +505,10 @@ describe("test multiple reports", () => {
     `;
 
     const parsed = parseInput(input);
-    const [battles] = parseBattles(parsed);
+    const { groups } = parseBattles(parsed);
     expect(parsed.length).toBe(1);
-    expect(battles.length).toBe(1);
-    expect(battles[0].start).toBe("2022-10-15 02:12:53");
+    expect(groups.length).toBe(1);
+    expect(groups[0].start).toBe("2022-10-15 02:12:53");
   });
 
   it("can parse a single report without header", () => {
@@ -493,9 +517,9 @@ describe("test multiple reports", () => {
     0:00 Magier zaubert [Orkan III] auf Gegner #1: erfolgreich.
     `;
 
-    const [battles] = parseBattles(parseInput(input));
-    expect(battles.length).toBe(1);
-    expect(battles[0].start).toBe("Kampfinformationen");
+    const { groups } = parseBattles(parseInput(input));
+    expect(groups.length).toBe(1);
+    expect(groups[0].start).toBe("Kampfinformationen");
   });
 
   it("can parse a multiple reports with header", () => {
@@ -511,10 +535,10 @@ describe("test multiple reports", () => {
     0:00 Magier zaubert [Orkan III] auf Gegner #1: erfolgreich.
     `;
 
-    const [battles] = parseBattles(parseInput(input));
-    expect(battles.length).toBe(2);
-    expect(battles[0].start).toBe("2022-10-15 02:12:53");
-    expect(battles[1].start).toBe("2022-10-15 03:12:53");
+    const { groups } = parseBattles(parseInput(input));
+    expect(groups.length).toBe(2);
+    expect(groups[0].start).toBe("2022-10-15 02:12:53");
+    expect(groups[1].start).toBe("2022-10-15 03:12:53");
   });
 
   it("can parse a multiple reports without first header", () => {
@@ -529,11 +553,11 @@ describe("test multiple reports", () => {
     `;
 
     const parsed = parseInput(input);
-    const [battles] = parseBattles(parsed);
+    const { groups } = parseBattles(parsed);
     expect(parsed.length).toBe(2);
-    expect(battles.length).toBe(2);
-    expect(battles[0].start).toBe("Kampfinformationen");
-    expect(battles[1].start).toBe("2022-10-15 03:12:53");
+    expect(groups.length).toBe(2);
+    expect(groups[0].start).toBe("Kampfinformationen");
+    expect(groups[1].start).toBe("2022-10-15 03:12:53");
     expect(parsed[0].input).toBe(`
     Runde 1
     0:00 Magier zaubert [Orkan III] auf Gegner #1: erfolgreich.
@@ -562,7 +586,7 @@ ${first}	100 Gold, 1 Sternenstaub, 2 Schattenstaub
 ${second}	75 Gold, 1 Sternenstaub, 2 Sand
 `;
 
-    const [, loot] = parseBattles(parseInput(input));
+    const { loot } = parseBattles(parseInput(input));
     expect(loot[first].Gold).toBe(150);
     expect(loot[second].Gold).toBe(175);
     expect(loot[second].Sand).toBe(3);
@@ -582,7 +606,7 @@ ${first}	100 Gold, 1 Sternenstaub, 2 Schattenstaub
 ${second}	75 Gold, 1 Sternenstaub, 2 Sand
 `;
 
-    const [, loot] = parseBattles(parseInput(input));
+    const { loot } = parseBattles(parseInput(input));
     expect(loot[second]).toHaveProperty("Gold");
     expect(loot[second]).toHaveProperty("Sand");
     expect(loot[second]).toHaveProperty("Einfacher Hartleder-Buckler (20)");
@@ -602,7 +626,7 @@ ${first}	10 Koboldbeere, 2 Setzling eines Baumkobolds
 ${second}	11 Koboldbeere, 3 Setzling eines Baumkobolds
 `;
 
-    const [, loot] = parseBattles(parseInput(input));
+    const { loot } = parseBattles(parseInput(input));
     expect(loot[second]).toHaveProperty("Koboldbeere");
     expect(loot[second]).toHaveProperty("Schwarze Schminke");
   });
