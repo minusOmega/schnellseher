@@ -6,7 +6,7 @@ export const buttonBarId = "button-bar";
 
 const Textarea = styled("textarea")({
   minWidth: 229.9,
-  whitespace: "pre",
+  whiteSpace: "pre",
   overflowWrap: "normal",
   marginLeft: 10,
   marginRight: 10,

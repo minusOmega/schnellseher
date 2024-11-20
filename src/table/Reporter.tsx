@@ -208,14 +208,7 @@ export default function Reporter({ data }: { data: string }) {
 
       <LootTable>
         {showLoot && <Loot name="Beute" data={memorizedLoot} items={memorizedItems} />}
-        {showLoot && (
-          <Loot
-            name="Werte"
-            data={memorizedValue}
-            items={memorizedDescriptions}
-            showNames={false}
-          />
-        )}
+        {showLoot && <Loot name="Werte" data={memorizedValue} items={memorizedDescriptions} />}
       </LootTable>
       <Table>
         <Head>
