@@ -101,6 +101,20 @@ export default function Reporter({ data }: { data: string }) {
   const [showBandaging, setShowBandaging] = React.useState<boolean>(false);
   const [showBattles, setShowBattles] = React.useState<boolean>(false);
   const { groupBy, type } = groupTypeMap[groupType];
+  const [memoizedReport, memorizedLoot, memorizedItems, memorizedValue, memorizedDescriptions] =
+    useMemo(
+      () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy, showBandaging),
+      [data, showBattles, groupBy, showBandaging]
+    );
+
+  const memoizedData = useMemo(
+    () =>
+      orderReport(
+        memoizedReport,
+        sort.map(({ by, group, func }) => [func || group, by])
+      ),
+    [memoizedReport, sort]
+  );
 
   const handleGroupTypeChange = (_: React.MouseEvent<HTMLElement>, next: string) => {
     if (next !== null) setGroupType(next);
@@ -142,70 +156,63 @@ export default function Reporter({ data }: { data: string }) {
     onChange: changeFilter,
   });
 
-  const [memoizedReport, memorizedLoot, memorizedItems, memorizedValue, memorizedDescriptions] =
-    useMemo(
-      () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy, showBandaging),
-      [data, showBattles, groupBy, showBandaging]
-    );
-
-  const memoizedData = useMemo(
-    () =>
-      orderReport(
-        memoizedReport,
-        sort.map(({ by, group, func }) => [func || group, by])
-      ),
-    [memoizedReport, sort]
+  const GroupTypeToggle = () => (
+    <ToggleButtonGroup exclusive color="primary" value={groupType} onChange={handleGroupTypeChange}>
+      <ToggleButton value={"Participant"}>Ausgehend</ToggleButton>
+      <ToggleButton value={"Target"}>Eingehend</ToggleButton>
+    </ToggleButtonGroup>
   );
+  const BandagingToggle = () => (
+    <ToggleButtonGroup
+      exclusive
+      color="primary"
+      value={showBandaging}
+      onChange={handleShowBandagingChange}
+    >
+      <ToggleButton value={"Bandaging"}>Bandagieren</ToggleButton>
+    </ToggleButtonGroup>
+  );
+
+  const BattlesToggle = () => (
+    <ToggleButtonGroup
+      exclusive
+      color="primary"
+      value={showBattles}
+      onChange={handleShowBattlesChange}
+    >
+      <ToggleButton value={"Battles"}>Kämpfe</ToggleButton>
+    </ToggleButtonGroup>
+  );
+
+  const LootToggle = () => (
+    <ToggleButtonGroup exclusive color="primary" value={showLoot} onChange={handleShowLootChange}>
+      <ToggleButton value={"Loot"}>Beute</ToggleButton>
+    </ToggleButtonGroup>
+  );
+
+  const VerticalDivider = () => (
+    <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+  );
+
+  const sxFlex = {
+    display: "flex",
+    padding: 0.5,
+  };
 
   return (
     <>
       <ButtonBarContent>
-        <Paper
-          sx={{
-            display: "flex",
-            padding: 0.5,
-          }}
-        >
-          <ToggleButtonGroup
-            exclusive
-            color="primary"
-            value={groupType}
-            onChange={handleGroupTypeChange}
-          >
-            <ToggleButton value={"Participant"}>Ausgehend</ToggleButton>
-            <ToggleButton value={"Target"}>Eingehend</ToggleButton>
-          </ToggleButtonGroup>
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
-
-          <ToggleButtonGroup
-            exclusive
-            color="primary"
-            value={showBandaging}
-            onChange={handleShowBandagingChange}
-          >
-            <ToggleButton value={"Bandaging"}>Bandagieren</ToggleButton>
-          </ToggleButtonGroup>
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
-          <ToggleButtonGroup
-            exclusive
-            color="primary"
-            value={showBattles}
-            onChange={handleShowBattlesChange}
-          >
-            <ToggleButton value={"Battles"}>Kämpfe</ToggleButton>
-          </ToggleButtonGroup>
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
-          <ToggleButtonGroup
-            exclusive
-            color="primary"
-            value={showLoot}
-            onChange={handleShowLootChange}
-          >
-            <ToggleButton value={"Loot"}>Beute</ToggleButton>
-          </ToggleButtonGroup>
+        <Paper sx={sxFlex}>
+          <BandagingToggle />
+          <VerticalDivider />
+          <BattlesToggle />
+          <VerticalDivider />
+          <LootToggle />
+        </Paper>
+        <Paper sx={sxFlex}>
+          <GroupTypeToggle />
         </Paper>
       </ButtonBarContent>
-
       <LootTable>
         {showLoot && <Loot name="Beute" data={memorizedLoot} items={memorizedItems} />}
         {showLoot && <Loot name="Werte" data={memorizedValue} items={memorizedDescriptions} />}
