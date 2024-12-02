@@ -203,14 +203,14 @@ export default function Reporter({ data }: { data: string }) {
     <>
       <ButtonBarContent>
         <Paper sx={sxFlex}>
+          <GroupTypeToggle />
+        </Paper>
+        <Paper sx={sxFlex}>
           <BandagingToggle />
           <VerticalDivider />
           <BattlesToggle />
           <VerticalDivider />
           <LootToggle />
-        </Paper>
-        <Paper sx={sxFlex}>
-          <GroupTypeToggle />
         </Paper>
       </ButtonBarContent>
       <LootTable>

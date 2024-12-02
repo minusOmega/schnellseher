@@ -13,6 +13,11 @@ const Textarea = styled("textarea")({
   marginBottom: 5,
 });
 
+const ButtonContainer = styled("div")({
+  marginLeft: 10,
+  marginRight: 10,
+});
+
 const ButtonGroup = styled("div")({
   display: "flex",
 });
@@ -20,10 +25,7 @@ const ButtonGroup = styled("div")({
 const ButtonBar = styled("div")({
   minWidth: 300,
   display: "flex",
-  justifyContent: "space-evenly",
-  flexFlow: "row-reverse",
-  marginLeft: 10,
-  marginRight: 10,
+  justifyContent: "start",
   flexWrap: "wrap",
   gap: 5,
 });
@@ -45,24 +47,29 @@ export function BattleData({
         onChange={(e) => setReport(e.target.value)}
         value={report}
       />
-      <ButtonBar id={buttonBarId}>
-        <ButtonGroup>
-          <Button variant="contained" onClick={() => onChange && onChange(report)}>
-            {(battles?.length || 0) > 1
-              ? `${battles?.length} Kampfberichte auswerten`
-              : "Kampfbericht auswerten"}
-          </Button>
-          <IconButton
-            color="primary"
-            onClick={() => {
-              setReport("");
-              onChange && onChange("");
-            }}
-          >
-            <DeleteIcon />
-          </IconButton>
-        </ButtonGroup>
-      </ButtonBar>
+      <ButtonContainer>
+        <ButtonBar id={buttonBarId}>
+          <ButtonGroup>
+            <Button variant="contained" onClick={() => onChange && onChange(report)}>
+              {(battles?.length || 0) >= 1
+                ? `${battles?.length} Kampfberichte auswerten (${battles?.reduce(
+                    (acc, b) => acc + b.round,
+                    0
+                  )} Runden)`
+                : "Kampfbericht auswerten"}
+            </Button>
+            <IconButton
+              color="primary"
+              onClick={() => {
+                setReport("");
+                onChange && onChange("");
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </ButtonGroup>
+        </ButtonBar>
+      </ButtonContainer>
     </>
   );
 }

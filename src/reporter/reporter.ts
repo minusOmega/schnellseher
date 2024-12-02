@@ -18,6 +18,7 @@ type RegexGroups = {
 };
 
 type Battle = {
+  round: number;
   start: string;
   input: string;
   from?: number;
@@ -52,6 +53,19 @@ function splitAtLastOccurrence(str: string, word: string): [string, string] {
   return [firstPart, secondPart];
 }
 
+function findLastRound(input: string): number {
+  const regex = /Runde (\d+)/g;
+  let match: RegExpExecArray | null;
+  let lastRound = 0;
+
+  while ((match = regex.exec(input)) !== null) {
+    const round = parseInt(match[1]);
+    if (round > lastRound) lastRound = round;
+  }
+
+  return lastRound;
+}
+
 export function parseInput(input: string, showBandaging: boolean = false) {
   const battleRegex = /((?<=Kampfinformationen \[Kampfbeginn: ).*(?=]))/g;
   const battles: Battles = [];
@@ -83,6 +97,7 @@ export function parseInput(input: string, showBandaging: boolean = false) {
     linesTo = linesFrom + battle.split(/\r\n|\r|\n/).length;
     battles.push({
       start,
+      round: findLastRound(battle),
       input: battle,
       from,
       to,
@@ -99,20 +114,20 @@ export type Loot = Record<string, Record<string, number>>;
 const participant =
   /[A-ZÄÖÜß][a-zäöüß]+(?:(?:(?: |-)[a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+))?/
     .source;
-const participantOrMonster = new RegExp(`${participant}(?: #\\d+)?`).source;
-const loot = /[^\t\n]*/.source;
-const value = /\t\d* [^\n]*/.source;
-const time = /\d+:\d\d/.source;
-const weapon = /(?<=\[).+?(?=\])/.source;
-const numbers = /\d+/.source;
-const hit = /[a-z]+\s?[A-Za-z]+?(?=\.| )/.source;
-const typ = /(?<=\()exzellenter Treffer|krit. Treffer(?=\))/.source;
-const block = /(?<=\()\d+(?=\sSchaden geblockt\)\.)/.source;
-const parry = /(?<=\()\d+(?=\sSchaden pariert\)\.)/.source;
+const participantOrMonsterPattern = new RegExp(`${participant}(?: #\\d+)?`).source;
+const lootPattern = /[^\t\n]*/.source;
+const valuePattern = /\t\d* [^\n]*/.source;
+const timePattern = /\d+:\d\d/.source;
+const weaponPattern = /(?<=\[).+?(?=\])/.source;
+const numbersPattern = /\d+/.source;
+const hitPattern = /[a-z]+\s?[A-Za-z]+?(?=\.| )/.source;
+const typPattern = /(?<=\()exzellenter Treffer|krit. Treffer(?=\))/.source;
+const blockPattern = /(?<=\()\d+(?=\sSchaden geblockt\)\.)/.source;
+const parryPattern = /(?<=\()\d+(?=\sSchaden pariert\)\.)/.source;
 
 function parseLoot({ input }: Battle): { value: Loot; loot: Loot } {
   let regex = new RegExp(
-    `^(?!Sieger\tBeuteverteilung)(?<participant>${participant})\t(?<loot>${loot})(?:\n|(?<value>${value}))?\n`,
+    `^(?!Sieger\tBeuteverteilung)(?<participant>${participant})\t(?<loot>${lootPattern})(?:\n|(?<value>${valuePattern}))?\n`,
     "gm"
   );
   let match: RegExpExecArray | null;
@@ -158,7 +173,7 @@ export function parseBattles(battles: Battles): {
     allLoot.push(loot);
     values.push(value);
     let regex = new RegExp(
-      `(?<time>${time}) (?<participant>${participantOrMonster})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (?:Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>${weapon})(?:]\\s(?:[a-z]+\\s){1,2})))(?<target>${participantOrMonster})?(?:.*?: )?(?:(?:verursacht (?<damage>${numbers}))|(?:heilt (?<heal>${numbers})))?(?<hit>${hit})?(?:\\s[a-zA-Z]+\\s\\()?(?<typ>${typ})?(?:.+\\()?(?:(?<block>${block})|(?<parry>${parry}))?`,
+      `(?<time>${timePattern}) (?<participant>${participantOrMonsterPattern})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (?:Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>${weaponPattern})(?:]\\s(?:[a-z]+\\s){1,2})))(?<target>${participantOrMonsterPattern})?(?:.*?: )?(?:(?:verursacht (?<damage>${numbersPattern}))|(?:heilt (?<heal>${numbersPattern})))?(?<hit>${hitPattern})?(?:\\s[a-zA-Z]+\\s\\()?(?<typ>${typPattern})?(?:.+\\()?(?:(?<block>${blockPattern})|(?<parry>${parryPattern}))?`,
       "g"
     );
     let match: RegExpExecArray | null;
