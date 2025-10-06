@@ -36,6 +36,8 @@ type RawData = RegexGroups & {
 export const constants = {
   move: "nähert sich",
   moveWeapon: "(In Bewegung)",
+  noParticipant: "no participant found",
+  backtracked: "backtracked caster",
   defeated: "sinkt kampfunfähig zu Boden",
   defeatedWeapon: "(Kampfunfähig)",
   swapMele: "wechselt in den Nahkampf",
@@ -229,21 +231,25 @@ export function backtrackCaster(groups: RawData[]) {
     .filter(({ hit }) => hit === "erfolgreich")
     .sort((a, b) => a.time.localeCompare(b.time))
     .reverse();
-  return groups.map((element) => {
+  return groups.map((element, index) => {
     if (element.participant) return element;
     const predecessor = getPredecessorIfCaster(element, groups);
     if (predecessor && predecessor.participant) {
-      return { ...element, participant: predecessor.participant };
+      return { ...element, participant: predecessor.participant, hit: constants.backtracked };
     } else {
       const match = dot.find(({ time, weapon, target }) => {
         if (weapon !== element.weapon) return false;
         if (target !== element.target) return false;
         return element.time.localeCompare(time) >= 0;
-      });
+      });      
       if (match) {
-        const result = { ...element, participant: match.participant };
+        const result = { ...element, participant: match.participant, hit: constants.backtracked };
         return result;
-      } else console.error(`Cannot find participant for ${JSON.stringify(element)}`);
+      } else {
+        const previous = groups[index - 1];        
+        if (previous && previous.participant ) return { ...element, participant: previous.participant, hit: constants.noParticipant };
+        console.error(`Cannot find participant for ${JSON.stringify(element)}`);
+      }
       return element;
     }
   });
@@ -258,6 +264,7 @@ export type Numbers = {
   healed: number;
   miss: number;
   dodged: number;
+  activate: number;
   attack: number;
   blocked: number;
   block: number;
@@ -308,10 +315,24 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
     let parried = parry !== undefined ? 1 : 0;
     let crit = typ === "krit. Treffer" || typ === "exzellenter Treffer" ? 1 : 0;
     let attack = 0;
+    let activate = 0;
+    let dmg = parseInt(damage);
     switch (hit) {
+      case constants.noParticipant:
+        healed = 0;
+        hits = 0;
+        blocked = 0;
+        parried = 0;
+        crit = 0;
+        activate++;
+        break;
+      case constants.backtracked:
+        activate++;
+        break;
       case "kein Schaden":
         hits++;
         attack++;
+        dmg = 0;
         break;
       case "erfolgreich":
         cast++;
@@ -358,10 +379,11 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       crit,
       cast,
       attack,
+      activate,
       healed,
       blocked,
       parried,
-      dmg: parseInt(damage) | 0,
+      dmg,
       heal: parseInt(heal) | 0,
       block: parseInt(block) | 0,
       parry: parseInt(parry) | 0,
@@ -400,10 +422,10 @@ function aggregateData(values: Data[]): Aggregation {
 
       if (ignoreForTotal(current)) return total;
 
-      if (current.crit === 1) {
+      if (current.crit === 1 && current.dmg >= 0) {
         total.minCrit = Math.min(total.minCrit, current.dmg);
         total.maxCrit = Math.max(total.maxCrit, current.dmg);
-      } else if (current.dmg > 0) {
+      } else if (current.dmg >= 0) {
         total.minDmg = Math.min(total.minDmg, current.dmg);
         total.maxDmg = Math.max(total.maxDmg, current.dmg);
       }
@@ -414,7 +436,8 @@ function aggregateData(values: Data[]): Aggregation {
       total.crit += current.crit;
       total.cast += current.cast;
       total.attack += current.attack;
-      total.dmg += current.dmg;
+      total.activate += current.activate;
+      total.dmg += current.dmg || 0;
       total.heal += current.heal;
       total.block += current.block;
       total.blocked += current.blocked;
@@ -430,6 +453,7 @@ function aggregateData(values: Data[]): Aggregation {
       crit: 0,
       cast: 0,
       attack: 0,
+      activate: 0,
       dmg: 0,
       minDmg: Infinity,
       maxDmg: 0,
@@ -454,7 +478,7 @@ function aggregateData(values: Data[]): Aggregation {
 
   const { attack, hit, dodged, healed, miss, crit, cast, blocked, parried } = aggregated;
   aggregated.missPercent = (miss / attack) * 100 || 0;
-  aggregated.dodgedPercent = (dodged / (hit + dodged /*+ miss*/ + cast)) * 100 || 0;
+  aggregated.dodgedPercent = (dodged / (attack - miss)) * 100 || 0;
   aggregated.critPercent = (crit / (hit + healed)) * 100 || 0;
   aggregated.blockPercent = (blocked / hit) * 100 || 0;
   aggregated.parryPercent = (parried / hit) * 100 || 0;

@@ -48,7 +48,7 @@ describe("test process cases", () => {
     expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
     expect((report[participant].children as Report)[weapon].dmg).toBe(0);
     expect((report[participant].children as Report)[weapon].cast).toBe(1);
-    expect((report[participant].children as Report)[weapon].hit).toBe(1);
+    expect((report[participant].children as Report)[weapon].attack).toBe(1);
   });
 
   it("can parse a missed attack", () => {
@@ -146,6 +146,18 @@ describe("test process cases", () => {
     expect((report[participant].children as Report)[weapon].dmg).toBe(0);
     expect((report[participant].children as Report)[weapon].parry).toBe(parry);
     expect((report[participant].children as Report)[weapon].hit).toBe(1);
+  });
+
+  it("can parse no damage", () => {
+    const [participant, weapon, dmg, crit] = ["Magier", "Attack", 12, 43];
+    const [report] = reporter(
+      `2:02 ${participant} [${weapon}] greift Gegner #1 an: kein Schaden.
+       2:26 ${participant} [${weapon}] greift Gegner #1 an: verursacht ${dmg} Schaden.
+       2:20 ${participant} [${weapon}] greift Gegner #1 an: verursacht ${crit} Schaden (krit. Treffer).`
+    );
+    expect(report[participant].children.hasOwnProperty(weapon)).toBe(true);
+    expect((report[participant].children as Report)[weapon].dmg).toBe(dmg+crit);
+    expect((report[participant].children as Report)[weapon].minDmg).toBe(0);
   });
 
   it("can parse a successful regeneration", () => {
@@ -402,17 +414,16 @@ describe("test percent calculation", () => {
     0:00 ${participant} zaubert [${weapon}] auf ${target}: erfolgreich.
     0:00 [${weapon}] wirkt auf ${target}: verursacht 2 Schaden.
     0:00 [${weapon}] wirkt auf ${target}: kein Schaden.`);
-    const { attack, dodged, hit, cast, miss, dodgedPercent, critPercent, missPercent } =
+    const { attack, dodged, activate, cast, miss, dodgedPercent, critPercent, missPercent } =
       report[participant];
-    expect(attack).toBe(5);
-    expect(hit).toBe(2);
+    expect(activate).toBe(2);
     expect(dodged).toBe(1);
     expect(cast).toBe(1);
     expect(miss).toBe(1);
-    expect(hit + dodged + cast).toBe(4);
-    expect(dodgedPercent).toBe((1 / 4) * 100);
-    expect(hit + dodged + miss + cast).toBe(5);
-    expect(missPercent).toBe((1 / 5) * 100);
+    expect(attack - miss).toBe(2);
+    expect(dodgedPercent).toBe((1 / 2) * 100);
+    expect(attack).toBe(3);
+    expect(missPercent).toBe((1 / 3) * 100);
     expect(critPercent).toBe(0);
   });
 });
@@ -489,6 +500,66 @@ describe("test damage over time calculation", () => {
     expect(report[wizard].dmg).toEqual(5);
     expect(report[warlock].dmg).toEqual(10);
   });
+
+  it("finds soul effects", () => {
+    const p1 = "Erster";
+    const p2 = "Zweiter";
+    const [report] = reporter(`
+      0:48 ${p1} [Stilett] greift Gegner #1 an: verursacht 200 Schaden (krit. Treffer).
+      0:48 [Blutritual] wirkt auf ${p2}: heilt 20 LP.
+      0:48 ${p2} [Sax] greift Gegner #1 an: verfehlt.
+      0:48 ${p2} [Sax] greift Gegner #1 an: verfehlt.
+      0:53 ${p2} [Sax] greift Gegner #1 an: verursacht 100 Schaden (krit. Treffer).
+      0:53 [Blutritual] wirkt auf ${p1}: heilt 10 LP.
+      0:53 ${p2} [Sax] greift Gegner #1 an: verursacht 100 Schaden (krit. Treffer).
+      0:53 [Blutritual] wirkt auf ${p1}: heilt 10 LP.
+      `);
+      
+    expect(report.undefined).toBeUndefined();
+    expect(report[p1].heal).toBe(20);
+    expect(report[p1].crit).toBe(1);
+    expect(report[p1].critPercent).toBe(100);
+    expect(report[p2].attack).toBe(4);
+    expect(report[p2].heal).toBe(20);
+    expect(report[p2].critPercent).toBe(100);
+  });
+  
+  it("ToDo (Bug): Last knocked out participant ends report early", () => {
+    const p1 = "Der Angreifer";
+    const [report] = reporter(`
+      0:24 ${p1} [Belagerungsarmbrust (Kurzbolzen)] greift Den Gegner an: verursacht 903 Schaden (krit. Treffer).
+      0:24 Den Gegner sinkt kampfunfähig zu Boden.
+      0:44 ${p1} [Belagerungsarmbrust (Kurzbolzen)] greift Elysian an: verursacht 514 Schaden.
+      `,undefined, true);
+      
+    expect(report[p1].attack).toBe(2);
+  });
+
+  it("Calculates area of effect damage over time", () => {
+    const caster = "Wizard";
+    const [report] = reporter(`
+      0:14 ${caster} zaubert [Orkan] auf Böser Magier #2: erfolgreich.
+      0:14 [Orkan] wirkt auf Böser Magier #2: verursacht 39 Schaden.
+      0:14 ${caster} zaubert [Orkan] auf Böser Magier #1: erfolgreich.
+      0:14 [Orkan] wirkt auf Böser Magier #1: verursacht 46 Schaden.
+      0:14 ${caster} zaubert [Orkan] auf Böser Magier #3: erfolgreich.
+      0:14 [Orkan] wirkt auf Böser Magier #3: verursacht 51 Schaden.
+
+      0:38 [Orkan] wirkt auf Böser Magier #1: verursacht 32 Schaden.
+      0:38 [Orkan] wirkt auf Böser Magier #3: verursacht 39 Schaden.
+      0:38 ${caster} zaubert [Orkan] auf Gegnerischer Magier #1: erfolgreich.
+      0:38 [Orkan] wirkt auf Gegnerischer Magier #1: verursacht 45 Schaden.
+      0:38 ${caster} zaubert [Orkan] auf Gegnerischer Magier #2: erfolgreich.
+      0:38 [Orkan] wirkt auf Böser Magier #2: verursacht 44 Schaden.
+
+      1:02 [Orkan] wirkt auf Böser Magier #1: verursacht 57 Schaden.
+      1:02 [Orkan] wirkt auf Böser Magier #3: verursacht 42 Schaden.
+      1:02 [Orkan] wirkt auf Böser Magier #2: verursacht 36 Schaden.
+      1:02 [Orkan] wirkt auf Gegnerischer Magier #1: verursacht 68 Schaden.
+      `);
+      
+    expect(report["undefined"]).toBeUndefined();
+  })
 });
 
 describe("test multiple reports", () => {

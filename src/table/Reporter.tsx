@@ -241,7 +241,7 @@ export default function Reporter({ data }: { data: string }) {
             </FilterColumn>
             <Column>min-max Schaden</Column>
             <Column>min-max Kritisch</Column>
-            <FilterColumn {...filterBy("attack")}>Aktiv</FilterColumn>
+            <FilterColumn {...filterBy("activate")}>Aktiv</FilterColumn>
             <FilterColumn {...filterBy("missPercent")}>Verfehlt</FilterColumn>
             <FilterColumn {...filterBy("dodgedPercent")}>Ausgewichen</FilterColumn>
             <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
