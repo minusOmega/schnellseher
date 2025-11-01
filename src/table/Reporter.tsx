@@ -88,7 +88,7 @@ const FilterColumn = ({
 const groupTypeMap: {
   [key: string]: { groupBy: GroupBy; type: "ausgeteilt" | "erhalten" };
 } = {
-  Participant: { groupBy: ["participant", "weapon"], type: "ausgeteilt" },
+  Participant: { groupBy: ["participant", "weapon", "target"], type: "ausgeteilt" },
   Target: { groupBy: ["target", "participant", "weapon"], type: "erhalten" },
 };
 
@@ -213,10 +213,8 @@ export default function Reporter({ data }: { data: string }) {
           <LootToggle />
         </Paper>
       </ButtonBarContent>
-      <LootTable>
-        {showLoot && <Loot name="Beute" data={memorizedLoot} items={memorizedItems} />}
-        {showLoot && <Loot name="Werte" data={memorizedValue} items={memorizedDescriptions} />}
-      </LootTable>
+        {showLoot && <LootTable><Loot name="Beute" data={memorizedLoot} items={memorizedItems} /></LootTable>}
+        {showLoot && <LootTable><Loot name="Werte" data={memorizedValue} items={memorizedDescriptions} /></LootTable>}
       <Table>
         <Head>
           <ContentsRow>

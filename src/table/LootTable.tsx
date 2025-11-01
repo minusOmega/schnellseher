@@ -68,11 +68,11 @@ export default function LootTable({
         <Body>
           {items.map((item, index) => (
             <ContentsRow key={item + index}>
-              <Header whiteSpace="nowrap" backgroundColor="white">
+              <Header whiteSpace="nowrap" backgroundColor="white" fontWeight={item.startsWith("#") ? "bold" : "normal"}>
                 {item}
               </Header>
               {participants.map((participant, index) => (
-                <Cell key={participant + index}>{data[participant][item] || ""}</Cell>
+                <Cell key={participant + index} fontWeight={item.startsWith("#") ? "bold" : "normal"}>{data[participant][item] || ""}</Cell>
               ))}
             </ContentsRow>
           ))}

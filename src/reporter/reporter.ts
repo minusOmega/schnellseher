@@ -118,7 +118,7 @@ const participant =
     .source;
 const participantOrMonsterPattern = new RegExp(`${participant}(?: #\\d+)?`).source;
 const lootPattern = /[^\t\n]*/.source;
-const valuePattern = /\t\d* [^\n]*/.source;
+const valuePattern = /\d* [^\n]*/.source;
 const timePattern = /\d+:\d\d/.source;
 const weaponPattern = /(?<=\[).+?(?=\])/.source;
 const numbersPattern = /\d+/.source;
@@ -127,17 +127,19 @@ const typPattern = /(?<=\()exzellenter Treffer|krit. Treffer(?=\))/.source;
 const blockPattern = /(?<=\()\d+(?=\sSchaden geblockt\)\.)/.source;
 const parryPattern = /(?<=\()\d+(?=\sSchaden pariert\)\.)/.source;
 
-function parseLoot({ input }: Battle): { value: Loot; loot: Loot } {
+function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
   let regex = new RegExp(
-    `^(?!Sieger\tBeuteverteilung)(?<participant>${participant})\t(?<loot>${lootPattern})(?:\n|(?<value>${valuePattern}))?\n`,
+    `^(?!Sieger\\tBeuteverteilung)(?<participant>${participant}) \\t(?<loot>${lootPattern}) \\t(?<uvp>\\d*)(?:\\n| \\t(?<value>${valuePattern}))?\\n`,
     "gm"
   );
+  let UVP = "# UVP";
   let match: RegExpExecArray | null;
   let collectedLoot: Loot = {};
+  let collectedUVP: Loot = {};
   let collectedValue: Loot = {};
   while ((match = regex.exec(input))) {
     if (match?.groups) {
-      const { participant, loot, value } = match.groups;
+      const { participant, loot, value, uvp } = match.groups;
       const collect = (total: Loot, current: string) => {
         const [amount, item] = current.split(/\s(.*)/s);
         let parsedAmount = parseInt(amount);
@@ -150,13 +152,15 @@ function parseLoot({ input }: Battle): { value: Loot; loot: Loot } {
       };
 
       collectedLoot = loot.split(", ").reduce(collect, collectedLoot);
+      if (collectedUVP[participant]) collectedUVP[participant][UVP] = parseInt(uvp) || 0;
+        else collectedUVP[participant] = { [UVP]: parseInt(uvp) || 0 };
       collectedValue = (value || "")
         .replace(/^\t+/, "")
         .split(", ")
         .reduce(collect, collectedValue);
     }
   }
-  return { loot: collectedLoot, value: collectedValue };
+  return { loot: collectedLoot, value: collectedValue, uvp: collectedUVP };
 }
 
 export function parseBattles(battles: Battles): {
@@ -169,11 +173,13 @@ export function parseBattles(battles: Battles): {
   const groups: RawData[] = [];
   const allLoot: Loot[] = [];
   const values: Loot[] = [];
+  const uvps: Loot[] = [];
   battles.forEach((battle) => {
     const { input, start } = battle;
-    const { loot, value } = parseLoot(battle);
+    const { loot, value, uvp } = parseLoot(battle);
     allLoot.push(loot);
     values.push(value);
+    uvps.push(uvp);
     let regex = new RegExp(
       `(?<time>${timePattern}) (?<participant>${participantOrMonsterPattern})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (?:Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>${weaponPattern})(?:]\\s(?:[a-z]+\\s){1,2})))(?<target>${participantOrMonsterPattern})?(?:.*?: )?(?:(?:verursacht (?<damage>${numbersPattern}))|(?:heilt (?<heal>${numbersPattern})))?(?<hit>${hitPattern})?(?:\\s[a-zA-Z]+\\s\\()?(?<typ>${typPattern})?(?:.+\\()?(?:(?<block>${blockPattern})|(?<parry>${parryPattern}))?`,
       "g"
@@ -211,7 +217,7 @@ export function parseBattles(battles: Battles): {
     return [output, names];
   };
 
-  const [loot, categories] = collect(allLoot);
+  const [loot, categories] = collect(allLoot.concat(uvps));
   const [value, descriptions] = collect(values);
 
   return { groups, value, loot, categories, descriptions };
@@ -535,7 +541,7 @@ export function orderReport(input: Report, order: [Order, OrderBy][] = [["dmg", 
 
 export default function reporter(
   input: string,
-  groupBy: GroupBy = ["participant", "weapon"],
+  groupBy: GroupBy = ["participant", "weapon", "target"],
   showBandaging = false
 ): [Report, Loot, string[], Loot, string[]] {
   const { categories, groups, loot, value, descriptions } = parseBattles(
