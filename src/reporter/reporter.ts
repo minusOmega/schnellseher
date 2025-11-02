@@ -239,6 +239,16 @@ export function backtrackCaster(groups: RawData[]) {
     .reverse();
   return groups.map((element, index) => {
     if (element.participant) return element;
+    const previous = groups[index - 1];
+    switch (element.weapon) {
+      case "Letztes Aufgebot":
+      case "Vampirismus":
+        return { ...element, participant: element.target, hit: constants.noParticipant };
+      case "Bluttransfer":
+        return { ...element, participant: previous.target, hit: constants.noParticipant };
+      case "Blutritual":
+        return { ...element, participant: previous.participant, hit: constants.noParticipant };
+      default:
     const predecessor = getPredecessorIfCaster(element, groups);
     if (predecessor && predecessor.participant) {
       return { ...element, participant: predecessor.participant, hit: constants.backtracked };
@@ -248,16 +258,13 @@ export function backtrackCaster(groups: RawData[]) {
         if (target !== element.target) return false;
         return element.time.localeCompare(time) >= 0;
       });      
-      if (match) {
-        const result = { ...element, participant: match.participant, hit: constants.backtracked };
-        return result;
-      } else {
-        const previous = groups[index - 1];        
-        if (previous && previous.participant ) return { ...element, participant: previous.participant, hit: constants.noParticipant };
+          if (match) return{ ...element, participant: match.participant, hit: constants.backtracked };
+          else {
         console.error(`Cannot find participant for ${JSON.stringify(element)}`);
+          }
+        }
       }
       return element;
-    }
   });
 }
 
