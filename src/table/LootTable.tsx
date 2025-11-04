@@ -1,7 +1,9 @@
-import { styled } from "@mui/material";
+import { IconButton, styled } from "@mui/material";
 import { Loot } from "../reporter/reporter";
 import { Cell, Header } from "./Cell";
 import { ContentsRow } from "./ContentsRow";
+import { useState } from "react";
+import { ExpanderArrow } from "./Icons";
 
 const Head = styled("thead")({
   display: "contents",
@@ -37,15 +39,16 @@ const Name = styled("p")({
 
 export default function LootTable({
   name,
-  caption = "Item",
   data,
   items,
+  expanded = false,
 }: {
   name: string;
-  caption?: string;
   data: Loot;
   items: string[];
+  expanded?: boolean;
 }) {
+  const [expand, setExpand] = useState(expanded);
   if (items.length === 0) return null;
   const participants = Object.keys(data);
   const columns = participants.length + 1;
@@ -57,33 +60,42 @@ export default function LootTable({
   });
   return (
     <Container>
-      <Name>{name}</Name>
       <Table>
         <Head>
           <ContentsRow>
-            <Column>{caption}</Column>
+            <Column style={{ minWidth: 120 }} >                   
+              <IconButton onClick={() => setExpand(!expand)} size="small">
+                {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+                <ExpanderArrow expand={+expand} fontSize="inherit" />
+              </IconButton> {name}
+            </Column>
             {participants.map((participant, index) => (
-              <Column key={participant + index}>{participant}</Column>
+              <Column style={{ minWidth: 75 }} key={participant + index}>{participant}</Column>
             ))}
           </ContentsRow>
         </Head>
         <Body>
-          {items.map((item, index) => (
+          {items.map((item, index) => {
+            const important = item.startsWith("#");
+            if (!expand && !important) {
+                  return; 
+                }
+            return(
             <ContentsRow key={item + index}>
               <Header whiteSpace="nowrap" backgroundColor="white" fontWeight={item.startsWith("#") ? "bold" : "normal"}>
                 {item}
               </Header>
-              {participants.map((participant, index) => {
+              {participants.map((participant, index) => {                              
                 const value = data[participant][item];
                 const displayValue = typeof value === "number" && !Number.isInteger(value)
                   ? value.toFixed(2)
                   : value;
                 return (
-                <Cell key={participant + index} fontWeight={item.startsWith("#") ? "bold" : "normal"}>
+                <Cell key={participant + index} fontWeight={important ? "bold" : "normal"}>
                   {displayValue}                      
                 </Cell>)})}
             </ContentsRow>
-          ))}
+          )})}
         </Body>
       </Table>
     </Container>

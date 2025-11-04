@@ -93,10 +93,10 @@ const groupTypeMap: {
 
 export default function Reporter({ data }: { data: string }) {
   const [expand, setExpand] = useState(false);
-  const [showMonster, setShowMonster] = useState(true);
+  const [showMonster, setShowMonster] = useState(false);
   const [sort, setSort] = useState<{ group: OrderKey; by: OrderBy; func?: OrderFunc }[]>([]);
   const [groupType, setGroupType] = React.useState<string>("Participant");
-  const [showLoot, setShowLoot] = React.useState<boolean>(false);
+  const [showLoot, setShowLoot] = React.useState<boolean>(true);
   const [apPerRound, setApPerRound] = React.useState<number>(2);
   const [showBandaging, setShowBandaging] = React.useState<boolean>(false);
   const [showBattles, setShowBattles] = React.useState<boolean>(false);
@@ -172,7 +172,7 @@ export default function Reporter({ data }: { data: string }) {
       }}
       aria-label="AP pro Runde"
     >
-      <ToggleButton value={0} selected color="primary" style={{ pointerEvents: "none" }}>AP:</ToggleButton>
+      <ToggleButton value={1} selected color="primary" style={{ pointerEvents: "none" }}>AP:</ToggleButton>
       <ToggleButton value={1}>-</ToggleButton>
       <ToggleButton value={2}>2</ToggleButton>
       <ToggleButton value={4}>4</ToggleButton>
@@ -214,7 +214,7 @@ export default function Reporter({ data }: { data: string }) {
       </ButtonBarContent>
         {showLoot && <LootTable><Loot name="Beute" data={memorizedLoot} items={memorizedItems} /></LootTable>}
         {showLoot && <LootTable><Loot name="Werte" data={memorizedValue} items={memorizedDescriptions} /></LootTable>}
-        {apPerRound > 1 && <LootTable><Loot name="Erfahrung" caption="" data={memorizedExp} items={memorizedInfo} /></LootTable>}
+        {apPerRound > 1 && <LootTable><Loot name="Erfahrung" data={memorizedExp} items={memorizedInfo} expanded /></LootTable>}
       <Table>
         <Head>
           <ContentsRow>
