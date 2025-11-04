@@ -34,6 +34,7 @@ type RawData = RegexGroups & {
 };
 
 export const constants = {
+  uvp: "# UVP",
   move: "nähert sich",
   moveWeapon: "(In Bewegung)",
   noParticipant: "no participant found",
@@ -45,13 +46,15 @@ export const constants = {
   swapWeapon: "(Waffenwechsel)",
 };
 
-function splitAtLastOccurrence(str: string, word: string): [string, string] {
-  const index = str.lastIndexOf(word);
+function splitAtFirstOccurrence(str: string, word: string): [string, string] {
+  const index = str.indexOf(word);
   if (index === -1) {
     return [str, ""];
   }
-  const firstPart = str.substring(0, index + word.length);
-  const secondPart = str.substring(index);
+
+  const newlineIndex = str.lastIndexOf("\n", index);
+  const firstPart = str.substring(0, newlineIndex);
+  const secondPart = str.substring(newlineIndex);
   return [firstPart, secondPart];
 }
 
@@ -91,7 +94,7 @@ export function parseInput(input: string, showBandaging: boolean = false) {
     } else continue;
 
     if (!showBandaging) {
-      const [before] = splitAtLastOccurrence(battle, "sinkt kampfunfähig zu Boden");
+      const [before] = splitAtFirstOccurrence(battle, "versorgt");
       battle = before;
     }
 
@@ -117,7 +120,7 @@ const participant =
   /[A-ZÄÖÜß][a-zäöüß]+(?:(?:(?: |-)[a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+))?/
     .source;
 const participantOrMonsterPattern = new RegExp(`${participant}(?: #\\d+)?`).source;
-const lootPattern = /[^\t\n]*/.source;
+const lootPattern = /[^\t\n]*?\S/.source;
 const valuePattern = /\d* [^\n]*/.source;
 const timePattern = /\d+:\d\d/.source;
 const weaponPattern = /(?<=\[).+?(?=\])/.source;
@@ -127,12 +130,57 @@ const typPattern = /(?<=\()exzellenter Treffer|krit. Treffer(?=\))/.source;
 const blockPattern = /(?<=\()\d+(?=\sSchaden geblockt\)\.)/.source;
 const parryPattern = /(?<=\()\d+(?=\sSchaden pariert\)\.)/.source;
 
+type participantStats = {
+    name: string;
+    stufe: string;
+    status: string;
+    lp: string;
+    exp?: number;
+    round?: number;
+}
+
+function parseParticipants({ input }: Battle): Record<string, participantStats> {
+  const regex = /^\[\?\]\s+(?<name>.*?)\s+(?<stufe>\d+)\s+(?<status>\S+)(?:\s+(?<lp>\d+%(?:\s+\+\d+%)?))?(?:\s+(?<exp>\d+\.?\d+))?$/gm;  
+  const results : Record<string, participantStats> = {};
+
+  for (const match of input.matchAll(regex)) {
+    if (match?.groups?.name) {
+      let participant : participantStats = {
+        name: match.groups.name,
+        stufe: match.groups.stufe,
+        status: match.groups.status,
+        lp: match.groups.lp,
+      }
+      if(match.groups.exp) participant["exp"] = parseFloat( match.groups.exp);
+      results[participant.name] = participant;
+    }
+  }
+
+  if(isEmpty(results)) return results;
+
+  let maxRound = 0;
+  for (const match of input.matchAll(/^Runde\s+(\d+)/gm)){
+    const r = parseInt(match[1], 10);
+    if (r > maxRound) maxRound = r;
+  }
+
+  for (const match of input.matchAll(/^(?<time>\d+:\d\d)\s+(?<name>.+?)\s+sinkt kampfunfähig zu Boden\./gm)){
+    if(match?.groups) {
+      const round = parseTime(match.groups.time);
+      results[match.groups.name.trim()].round = round;
+    }
+  }
+
+  for(const participant in results) {
+    if(!results[participant].round) results[participant].round = maxRound;
+  }
+
+  return results
+}
+
 function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
   let regex = new RegExp(
-    `^(?!Sieger\\tBeuteverteilung)(?<participant>${participant}) \\t(?<loot>${lootPattern}) \\t(?<uvp>\\d*)(?:\\n| \\t(?<value>${valuePattern}))?\\n`,
-    "gm"
-  );
-  let UVP = "# UVP";
+    `^(?!Sieger[ \\t]+Beuteverteilung)(?<participant>${participant})[ \\t]+(?<loot>${lootPattern})[ \t]+(?<uvp>\\d*)(?:\\n|[ \\t]+(?<value>${valuePattern}))?\\n`,"gm");
   let match: RegExpExecArray | null;
   let collectedLoot: Loot = {};
   let collectedUVP: Loot = {};
@@ -152,8 +200,8 @@ function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
       };
 
       collectedLoot = loot.split(", ").reduce(collect, collectedLoot);
-      if (collectedUVP[participant]) collectedUVP[participant][UVP] = parseInt(uvp) || 0;
-        else collectedUVP[participant] = { [UVP]: parseInt(uvp) || 0 };
+      if (collectedUVP[participant]) collectedUVP[participant][constants.uvp] = parseInt(uvp) || 0;
+      else collectedUVP[participant] = { [constants.uvp]: parseInt(uvp) || 0 };
       collectedValue = (value || "")
         .replace(/^\t+/, "")
         .split(", ")
@@ -163,20 +211,31 @@ function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
   return { loot: collectedLoot, value: collectedValue, uvp: collectedUVP };
 }
 
-export function parseBattles(battles: Battles): {
+export function parseBattles(battles: Battles, apPerRound = 2): {
   groups: RawData[];
-  value: Loot;
-  loot: Loot;
-  categories: string[];
-  descriptions: string[];
+  value: [Loot, string[]];
+  loot: [Loot, string[]];
+  exp: [Loot, string[]];
 } {
+  const SUM = "# Summe";
+  const ROUNDS = "Runden";
+  const EXP = "EXP";
+  const EXP_ROUND = `# EXP pro ${apPerRound > 1 ? "AP" : "Runde"}`;
+  const UVP_ROUND = `# UVP pro ${apPerRound > 1 ? "AP" : "Runde"}`;
   const groups: RawData[] = [];
   const allLoot: Loot[] = [];
   const values: Loot[] = [];
   const uvps: Loot[] = [];
+  const allExp: Loot[] = [];
+  let rounds: number = 0;
   battles.forEach((battle) => {
     const { input, start } = battle;
     const { loot, value, uvp } = parseLoot(battle);
+    const participants = parseParticipants(battle);
+    allExp.push(Object.fromEntries(Object.entries(participants).filter(([, stats])=> stats.exp).map(([name, stats]) => {
+      return [name, { [EXP]: stats.exp || 0, [ROUNDS]: stats.round || 0  }];
+    })));
+    rounds += battle.round;
     allLoot.push(loot);
     values.push(value);
     uvps.push(uvp);
@@ -192,7 +251,7 @@ export function parseBattles(battles: Battles): {
     }
   });
 
-  const collect = (input: Loot[]): [Loot, string[]] => {
+  const collect = (input: Loot[], name?: string): [Loot, string[]] => {
     const names: string[] = [];
     const sum: Record<string, number> = {};
     if (!input) return [{}, names];
@@ -213,14 +272,24 @@ export function parseBattles(battles: Battles): {
       return total;
     }, {});
 
-    output["# Summe"] = sum;
+    if(name && !isEmpty(sum)) output[name] = sum;
     return [output, names];
   };
 
-  const [loot, categories] = collect(allLoot.concat(uvps));
-  const [value, descriptions] = collect(values);
-
-  return { groups, value, loot, categories, descriptions };
+  
+  const loot = collect(allLoot.concat(uvps), SUM);
+  const value = collect(values, SUM);
+  let exp = collect(allExp);
+  for (const participant in exp[0]) {
+    exp[0][participant][EXP_ROUND] = exp[0][participant][EXP] / (exp[0][participant][ROUNDS] || 1) / apPerRound;
+    if(loot[0][participant]) loot[0][participant][UVP_ROUND] = loot[0][participant][constants.uvp] / (exp[0][participant][ROUNDS] || 1) / apPerRound;
+  }
+  if(loot[0][SUM]) {
+    loot[0][SUM][UVP_ROUND] = loot[0][SUM][constants.uvp] / (rounds|| 1) / (Object.entries(loot[0]).length -1) / apPerRound;
+    loot[1].push(UVP_ROUND);
+  }
+  if(Object.entries(exp[0]).length > 0) exp[1].push(EXP_ROUND);
+  return { groups, value, loot, exp };
 }
 
 const getPredecessorIfCaster = (current: RawData, all: RawData[]) => {
@@ -249,23 +318,23 @@ export function backtrackCaster(groups: RawData[]) {
       case "Blutritual":
         return { ...element, participant: previous.participant, hit: constants.noParticipant };
       default:
-    const predecessor = getPredecessorIfCaster(element, groups);
-    if (predecessor && predecessor.participant) {
-      return { ...element, participant: predecessor.participant, hit: constants.backtracked };
-    } else {
-      const match = dot.find(({ time, weapon, target }) => {
-        if (weapon !== element.weapon) return false;
-        if (target !== element.target) return false;
-        return element.time.localeCompare(time) >= 0;
-      });      
+        const predecessor = getPredecessorIfCaster(element, groups);
+        if (predecessor && predecessor.participant) {
+          return { ...element, participant: predecessor.participant, hit: constants.backtracked };
+        } else {
+          const match = dot.find(({ time, weapon, target }) => {
+            if (weapon !== element.weapon) return false;
+            if (target !== element.target) return false;
+            return element.time.localeCompare(time) >= 0;
+          });
           if (match) return{ ...element, participant: match.participant, hit: constants.backtracked };
           else {
-        console.error(`Cannot find participant for ${JSON.stringify(element)}`);
+            console.error(`Cannot find participant for ${JSON.stringify(element)}`);
           }
         }
       }
       return element;
-  });
+    });
 }
 
 export type Numbers = {
@@ -549,12 +618,16 @@ export function orderReport(input: Report, order: [Order, OrderBy][] = [["dmg", 
 export default function reporter(
   input: string,
   groupBy: GroupBy = ["participant", "weapon", "target"],
-  showBandaging = false
-): [Report, Loot, string[], Loot, string[]] {
-  const { categories, groups, loot, value, descriptions } = parseBattles(
-    parseInput(input, showBandaging)
+  showBandaging = false,
+  apPerRound = 2
+): [Report, Loot, string[], Loot, string[], Loot, string[]] {
+  const { groups, loot, value, exp } = parseBattles(
+    parseInput(input, showBandaging), apPerRound
   );
+  const [values, descriptions] = value;
+  const [loots, categories] = loot;
+  const [exps, info] = exp;
   const data = parseRegexGroups(backtrackCaster(groups));
   const aggregation = aggregate(data, groupBy);
-  return [aggregation, loot, categories, value, descriptions];
+  return [aggregation, loots, categories, values, descriptions, exps, info];
 }

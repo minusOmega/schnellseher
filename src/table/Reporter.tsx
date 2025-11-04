@@ -37,7 +37,6 @@ const Body = styled("tbody")({
 const Column = styled("th")({
   "&:nth-of-type(1)": { flexDirection: "column-reverse" },
   "&:nth-of-type(2)": { zIndex: 2, left: 0 },
-  minHeight: 90,
   alignItems: "flex-start",
   border: "1px solid black",
   padding: 8,
@@ -98,13 +97,14 @@ export default function Reporter({ data }: { data: string }) {
   const [sort, setSort] = useState<{ group: OrderKey; by: OrderBy; func?: OrderFunc }[]>([]);
   const [groupType, setGroupType] = React.useState<string>("Participant");
   const [showLoot, setShowLoot] = React.useState<boolean>(false);
+  const [apPerRound, setApPerRound] = React.useState<number>(2);
   const [showBandaging, setShowBandaging] = React.useState<boolean>(false);
   const [showBattles, setShowBattles] = React.useState<boolean>(false);
   const { groupBy, type } = groupTypeMap[groupType];
-  const [memoizedReport, memorizedLoot, memorizedItems, memorizedValue, memorizedDescriptions] =
+  const [memoizedReport, memorizedLoot, memorizedItems, memorizedValue, memorizedDescriptions, memorizedExp, memorizedInfo] =
     useMemo(
-      () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy, showBandaging),
-      [data, showBattles, groupBy, showBandaging]
+      () => reporter(data, showBattles ? ["start", ...groupBy] : groupBy, showBandaging, apPerRound),
+      [data, showBattles, groupBy, showBandaging, apPerRound]
     );
 
   const memoizedData = useMemo(
@@ -118,18 +118,6 @@ export default function Reporter({ data }: { data: string }) {
 
   const handleGroupTypeChange = (_: React.MouseEvent<HTMLElement>, next: string) => {
     if (next !== null) setGroupType(next);
-  };
-
-  const handleShowLootChange = (_: React.MouseEvent<HTMLElement>, next: boolean | null) => {
-    setShowLoot(next !== null ? next : false);
-  };
-
-  const handleShowBattlesChange = (_: React.MouseEvent<HTMLElement>, next: boolean | null) => {
-    setShowBattles(next !== null ? next : false);
-  };
-
-  const handleShowBandagingChange = (_: React.MouseEvent<HTMLElement>, next: boolean | null) => {
-    setShowBandaging(next !== null ? next : false);
   };
 
   const changeFilter = (group: OrderKey, func?: OrderFunc) => {
@@ -163,31 +151,37 @@ export default function Reporter({ data }: { data: string }) {
     </ToggleButtonGroup>
   );
   const BandagingToggle = () => (
-    <ToggleButtonGroup
-      exclusive
-      color="primary"
-      value={showBandaging}
-      onChange={handleShowBandagingChange}
-    >
-      <ToggleButton value={"Bandaging"}>Bandagieren</ToggleButton>
-    </ToggleButtonGroup>
+      <ToggleButton color="primary" value={"check"} selected={showBandaging} onChange={() => setShowBandaging((prev) => !prev)}>Bandagieren</ToggleButton>
   );
 
-  const BattlesToggle = () => (
-    <ToggleButtonGroup
-      exclusive
-      color="primary"
-      value={showBattles}
-      onChange={handleShowBattlesChange}
-    >
-      <ToggleButton value={"Battles"}>Kämpfe</ToggleButton>
-    </ToggleButtonGroup>
+  const BattlesToggle = () => (    
+      <ToggleButton color="primary" value={"check"} selected={showBattles} onChange={() => setShowBattles((prev) => !prev)}>Kämpfe</ToggleButton>
   );
 
   const LootToggle = () => (
-    <ToggleButtonGroup exclusive color="primary" value={showLoot} onChange={handleShowLootChange}>
-      <ToggleButton value={"Loot"}>Beute</ToggleButton>
+      <ToggleButton color="primary" value={"check"} selected={showLoot} onChange={() => setShowLoot((prev) => !prev)}>Beute</ToggleButton>
+  );
+
+  const ExpToggle = () => (
+    <ToggleButtonGroup
+      color="primary"
+      value={apPerRound}
+      exclusive
+      onChange={(_, value) => {
+        if (value !== null) setApPerRound(value as number);
+      }}
+      aria-label="AP pro Runde"
+    >
+      <ToggleButton value={0} selected color="primary" style={{ pointerEvents: "none" }}>AP:</ToggleButton>
+      <ToggleButton value={1}>-</ToggleButton>
+      <ToggleButton value={2}>2</ToggleButton>
+      <ToggleButton value={4}>4</ToggleButton>
+      <ToggleButton value={8}>8</ToggleButton>
     </ToggleButtonGroup>
+  );
+
+  const MonsterToggle = () => (
+      <ToggleButton color="primary" value={"check"} selected={showMonster} onChange={() => setShowMonster((prev) => !prev)}>Monster</ToggleButton>
   );
 
   const VerticalDivider = () => (
@@ -208,13 +202,19 @@ export default function Reporter({ data }: { data: string }) {
         <Paper sx={sxFlex}>
           <BandagingToggle />
           <VerticalDivider />
+          <MonsterToggle />          
+          <VerticalDivider />
           <BattlesToggle />
           <VerticalDivider />
-          <LootToggle />
+          <LootToggle />      
+        </Paper>
+        <Paper sx={sxFlex}>          
+          <ExpToggle />
         </Paper>
       </ButtonBarContent>
         {showLoot && <LootTable><Loot name="Beute" data={memorizedLoot} items={memorizedItems} /></LootTable>}
         {showLoot && <LootTable><Loot name="Werte" data={memorizedValue} items={memorizedDescriptions} /></LootTable>}
+        {apPerRound > 1 && <LootTable><Loot name="Erfahrung" caption="" data={memorizedExp} items={memorizedInfo} /></LootTable>}
       <Table>
         <Head>
           <ContentsRow>
@@ -223,12 +223,7 @@ export default function Reporter({ data }: { data: string }) {
                 {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
                 <ExpanderArrow expand={+expand} fontSize="small" />
               </IconButton>
-              <Tooltip title={`Monster ${showMonster ? "ausblenden" : "einblenden"}`}>
-                <IconButton onClick={() => setShowMonster(!showMonster)} size="small">
-                  {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-                  <Hash active={+showMonster} fontSize="inherit" />
-                </IconButton>
-              </Tooltip>
+           
             </Column>
             <Column>Name</Column>
             <Column>Runden</Column>

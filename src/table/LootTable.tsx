@@ -37,10 +37,12 @@ const Name = styled("p")({
 
 export default function LootTable({
   name,
+  caption = "Item",
   data,
   items,
 }: {
   name: string;
+  caption?: string;
   data: Loot;
   items: string[];
 }) {
@@ -59,7 +61,7 @@ export default function LootTable({
       <Table>
         <Head>
           <ContentsRow>
-            <Column>Item</Column>
+            <Column>{caption}</Column>
             {participants.map((participant, index) => (
               <Column key={participant + index}>{participant}</Column>
             ))}
@@ -71,9 +73,15 @@ export default function LootTable({
               <Header whiteSpace="nowrap" backgroundColor="white" fontWeight={item.startsWith("#") ? "bold" : "normal"}>
                 {item}
               </Header>
-              {participants.map((participant, index) => (
-                <Cell key={participant + index} fontWeight={item.startsWith("#") ? "bold" : "normal"}>{data[participant][item] || ""}</Cell>
-              ))}
+              {participants.map((participant, index) => {
+                const value = data[participant][item];
+                const displayValue = typeof value === "number" && !Number.isInteger(value)
+                  ? value.toFixed(2)
+                  : value;
+                return (
+                <Cell key={participant + index} fontWeight={item.startsWith("#") ? "bold" : "normal"}>
+                  {displayValue}                      
+                </Cell>)})}
             </ContentsRow>
           ))}
         </Body>

@@ -648,19 +648,19 @@ describe("test loot reporting", () => {
     const input = `
 Kampfinformationen [Kampfbeginn: 2022-12-06 07:28:13]    
 Sieger	Beuteverteilung
-${first}	50 Gold, 1 Sternenstaub
-${second}	100 Gold, 1 Sand
+${first}	50 Gold, 1 Sternenstaub 	50
+${second}	100 Gold, 1 Sand 	100
 Kampfereignisse (Log)   
 Kampfinformationen [Kampfbeginn: 2022-12-06 03:31:20]   	
 Sieger	Beuteverteilung
-${first}	100 Gold, 1 Sternenstaub, 2 Schattenstaub
-${second}	75 Gold, 1 Sternenstaub, 2 Sand
+${first}	100 Gold, 1 Sternenstaub, 2 Schattenstaub 	100
+${second}	75 Gold, 1 Sternenstaub, 2 Sand 	75
 `;
 
     const { loot } = parseBattles(parseInput(input));
-    expect(loot[first].Gold).toBe(150);
-    expect(loot[second].Gold).toBe(175);
-    expect(loot[second].Sand).toBe(3);
+    expect(loot[0][first].Gold).toBe(150);
+    expect(loot[0][second].Gold).toBe(175);
+    expect(loot[0][second].Sand).toBe(3);
   });
 
   it("can parse found equipment", () => {
@@ -668,19 +668,19 @@ ${second}	75 Gold, 1 Sternenstaub, 2 Sand
     const input = `
 Kampfinformationen [Kampfbeginn: 2022-12-06 07:28:13]    
 Sieger	Beuteverteilung
-${first}	50 Gold, 1 Sternenstaub
-${second}	100 Gold, 1 Sand, Einfacher Hartleder-Buckler (20)
+${first}	50 Gold, 1 Sternenstaub 	1
+${second}	100 Gold, 1 Sand, Einfacher Hartleder-Buckler (20) 	1
 Kampfereignisse (Log)   
 Kampfinformationen [Kampfbeginn: 2022-12-06 03:31:20]   	
 Sieger	Beuteverteilung
-${first}	100 Gold, 1 Sternenstaub, 2 Schattenstaub
-${second}	75 Gold, 1 Sternenstaub, 2 Sand
+${first}	100 Gold, 1 Sternenstaub, 2 Schattenstaub 	1
+${second}	75 Gold, 1 Sternenstaub, 2 Sand 	1
 `;
 
     const { loot } = parseBattles(parseInput(input));
-    expect(loot[second]).toHaveProperty("Gold");
-    expect(loot[second]).toHaveProperty("Sand");
-    expect(loot[second]).toHaveProperty("Einfacher Hartleder-Buckler (20)");
+    expect(loot[0][second]).toHaveProperty("Gold");
+    expect(loot[0][second]).toHaveProperty("Sand");
+    expect(loot[0][second]).toHaveProperty("Einfacher Hartleder-Buckler (20)");
   });
 
   it("can parse loot with space in the name", () => {
@@ -688,17 +688,17 @@ ${second}	75 Gold, 1 Sternenstaub, 2 Sand
     const input = `
 Kampfinformationen [Kampfbeginn: 2022-12-06 07:28:13]    
 Sieger	Beuteverteilung
-${first}	1 Goblinknochen, 1 Klebriger Stein
-${second}	3 Schwarze Schminke, 1 Leinensack, 1 Sorandil-Münzbarren
+${first}	1 Goblinknochen, 1 Klebriger Stein 	1
+${second}	3 Schwarze Schminke, 1 Leinensack, 1 Sorandil-Münzbarren 	1
 Kampfereignisse (Log)   
 Kampfinformationen [Kampfbeginn: 2022-12-06 03:31:20]   	
 Sieger	Beuteverteilung
-${first}	10 Koboldbeere, 2 Setzling eines Baumkobolds
-${second}	11 Koboldbeere, 3 Setzling eines Baumkobolds
+${first}	10 Koboldbeere, 2 Setzling eines Baumkobolds 	1
+${second}	11 Koboldbeere, 3 Setzling eines Baumkobolds 	1
 `;
 
     const { loot } = parseBattles(parseInput(input));
-    expect(loot[second]).toHaveProperty("Koboldbeere");
-    expect(loot[second]).toHaveProperty("Schwarze Schminke");
+    expect(loot[0][second]).toHaveProperty("Koboldbeere");
+    expect(loot[0][second]).toHaveProperty("Schwarze Schminke");
   });
 });
