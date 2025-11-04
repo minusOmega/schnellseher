@@ -684,7 +684,7 @@ ${second}	75 Gold, 1 Sternenstaub, 2 Sand 	1
   });
 
   it("can parse loot with space in the name", () => {
-    const [first, second] = ["Magier", "Kämpfer"];
+    const [first, second, third] = ["Magier", "Kämpfer", "LaZer"];
     const input = `
 Kampfinformationen [Kampfbeginn: 2022-12-06 07:28:13]    
 Sieger	Beuteverteilung
@@ -693,12 +693,13 @@ ${second}	3 Schwarze Schminke, 1 Leinensack, 1 Sorandil-Münzbarren 	1
 Kampfereignisse (Log)   
 Kampfinformationen [Kampfbeginn: 2022-12-06 03:31:20]   	
 Sieger	Beuteverteilung
-${first}	10 Koboldbeere, 2 Setzling eines Baumkobolds 	1
+${third}	10 Koboldbeere, 2 Setzling eines Baumkobolds 	1
 ${second}	11 Koboldbeere, 3 Setzling eines Baumkobolds 	1
 `;
 
     const { loot } = parseBattles(parseInput(input));
     expect(loot[0][second]).toHaveProperty("Koboldbeere");
     expect(loot[0][second]).toHaveProperty("Schwarze Schminke");
+    expect(loot[0][third]).toHaveProperty("Koboldbeere");
   });
 });

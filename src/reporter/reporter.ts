@@ -117,11 +117,11 @@ export function parseInput(input: string, showBandaging: boolean = false) {
 export type Loot = Record<string, Record<string, number>>;
 
 const participant =
-  /[A-ZÄÖÜß][a-zäöüß]+(?:(?:(?: |-)[a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+))?/
+  /[A-ZÄÖÜß][a-zäöüßA-Z]+(?:(?:(?: |-)[a-zäöüßA-Z]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüßA-Z]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüßA-Z]+))?/
     .source;
 const participantOrMonsterPattern = new RegExp(`${participant}(?: #\\d+)?`).source;
 const spacer = /[ \t]+/.source;
-const lootPattern = /\d[^\t\n]*[a-z]/.source;
+const lootPattern = /\d[^\t\n]*[a-z|)]/.source;
 const valuePattern = /\d* [^\n\t]*/.source;
 const timePattern = /\d+:\d\d/.source;
 const weaponPattern = /(?<=\[).+?(?=\])/.source;
