@@ -120,8 +120,9 @@ const participant =
   /[A-ZÄÖÜß][a-zäöüß]+(?:(?:(?: |-)[a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüß]+))?/
     .source;
 const participantOrMonsterPattern = new RegExp(`${participant}(?: #\\d+)?`).source;
-const lootPattern = /[^\t\n]*?\S/.source;
-const valuePattern = /\d* [^\n]*/.source;
+const spacer = /[ \t]+/.source;
+const lootPattern = /\d[^\t\n]*[a-z]/.source;
+const valuePattern = /\d* [^\n\t]*/.source;
 const timePattern = /\d+:\d\d/.source;
 const weaponPattern = /(?<=\[).+?(?=\])/.source;
 const numbersPattern = /\d+/.source;
@@ -140,7 +141,7 @@ type participantStats = {
 }
 
 function parseParticipants({ input }: Battle): Record<string, participantStats> {
-  const regex = /^\[\?\]\s+(?<name>.*?)\s+(?<stufe>\d+)\s+(?<status>\S+)(?:\s+(?<lp>\d+%(?:\s+\+\d+%)?))?(?:\s+(?<exp>\d+\.?\d+))?$/gm;  
+  const regex = /^\[\?\]\s+(?<name>.*?)\s+(?<stufe>\d+)\s+(?<status>\S+)(?:\s+(?<lp>\d+%(?:\s+\+\d+%)?))?(?:\s+(?<exp>\d+\.?\d+))?/gm;  
   const results : Record<string, participantStats> = {};
 
   for (const match of input.matchAll(regex)) {
@@ -180,7 +181,7 @@ function parseParticipants({ input }: Battle): Record<string, participantStats> 
 
 function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
   let regex = new RegExp(
-    `^(?!Sieger[ \\t]+Beuteverteilung)(?<participant>${participant})[ \\t]+(?<loot>${lootPattern})[ \\t]+(?<uvp>\\d*)(?:\\n|[ \\t]+(?<value>${valuePattern}))?\\n`,"gm");
+    `^(?!Sieger${spacer}Beuteverteilung)(?<participant>${participant})${spacer}(?<loot>${lootPattern})\\s+(?<uvp>\\d*)(?:\\n|${spacer}(?<value>${valuePattern}))?`,"gm");
   let match: RegExpExecArray | null;
   let collectedLoot: Loot = {};
   let collectedUVP: Loot = {};
@@ -199,13 +200,15 @@ function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
         return total;
       };
 
-      collectedLoot = loot.split(", ").reduce(collect, collectedLoot);
-      if (collectedUVP[participant]) collectedUVP[participant][constants.uvp] = parseInt(uvp) || 0;
-      else collectedUVP[participant] = { [constants.uvp]: parseInt(uvp) || 0 };
+      const sum = parseInt(uvp);  
+      if(Number.isNaN(sum)) {}
+      else if (collectedUVP[participant]) collectedUVP[participant][constants.uvp] = sum || 0;
+      else collectedUVP[participant] = { [constants.uvp]: sum || 0 };
       collectedValue = (value || "")
-        .replace(/^\t+/, "")
-        .split(", ")
-        .reduce(collect, collectedValue);
+      .replace(/^\t+/, "")
+      .split(", ")
+      .reduce(collect, collectedValue);
+      collectedLoot = loot.split(", ").reduce(collect, collectedLoot);
     }
   }
   return { loot: collectedLoot, value: collectedValue, uvp: collectedUVP };
