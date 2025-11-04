@@ -180,7 +180,7 @@ function parseParticipants({ input }: Battle): Record<string, participantStats> 
 
 function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
   let regex = new RegExp(
-    `^(?!Sieger[ \\t]+Beuteverteilung)(?<participant>${participant})[ \\t]+(?<loot>${lootPattern})[ \t]+(?<uvp>\\d*)(?:\\n|[ \\t]+(?<value>${valuePattern}))?\\n`,"gm");
+    `^(?!Sieger[ \\t]+Beuteverteilung)(?<participant>${participant})[ \\t]+(?<loot>${lootPattern})[ \\t]+(?<uvp>\\d*)(?:\\n|[ \\t]+(?<value>${valuePattern}))?\\n`,"gm");
   let match: RegExpExecArray | null;
   let collectedLoot: Loot = {};
   let collectedUVP: Loot = {};
