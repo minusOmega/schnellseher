@@ -55,11 +55,20 @@ const TopBar = styled("div")({
 
 function App() {
 
-  const [mode, setMode] = React.useState<'light' | 'dark'>('dark');
+  const [mode, setMode] = React.useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem("mode");
+    if(stored === 'light') return stored;
+    else return 'dark';
+  });
   const colorMode = React.useMemo(
     () => ({
       toggleColorMode: () => {
-        setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+        setMode((prevMode) => {
+          const nextMode = (prevMode === 'light' ? 'dark' : 'light');
+          localStorage.setItem("mode", nextMode);
+          return nextMode;
+        });
+        
       },
     }),
     [],
