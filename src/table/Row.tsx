@@ -6,11 +6,11 @@ import { Cell, Header } from "./Cell";
 import { ExpanderArrow } from "./Icons";
 
 const colorMap: { [key: string]: string } = {
-  start: "rgb(224,224,224)",
-  participant: "white",
-  target: "rgb(230,240,245)",
-  weapon: "rgb(230,250,245)",
-  undefined: "white",
+  start: "divider",
+  participant: "background.default",
+  target: "primary.light",
+  weapon: "secondary.light",
+  undefined: "background.default",
 };
 
 const TooltipText = styled("span")({
@@ -55,14 +55,14 @@ export function Aggregated({
   const groupedRounds = groupByBattle(rounds);
   return (
     <>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         <Tooltip
           title={
             <>
               {groupedRounds.length === 1
                 ? roundsToString(rounds)
                 : groupedRounds.map(([key, value]) => (
-                    <p>{`${key.split(" ").at(-1)}: [${roundsToString(value)}]`}</p>
+                    <p key={key} >{`${key.split(" ").at(-1)}: [${roundsToString(value)}]`}</p>
                   ))}
             </>
           }
@@ -71,20 +71,20 @@ export function Aggregated({
           <TooltipText>{rounds.length}</TooltipText>
         </Tooltip>
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>{heal}</Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>{heal}</Cell>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         {dmg} ({block + parry})
       </Cell>
 
-      <Cell backgroundColor={colorMap[group]}>{(dmg / rounds.length).toFixed(1)}</Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>{(dmg / rounds.length).toFixed(1)}</Cell>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         {minDmg}-{maxDmg}
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         {minCrit}-{maxCrit}
       </Cell>
-      <Cell backgroundColor={colorMap[group]}> {attack}</Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}> {attack}</Cell>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         <Spaced>
           <Percent>
             {Number.isFinite(missPercent) ? missPercent.toFixed(1) + "%" : "Fehler"}
@@ -92,7 +92,7 @@ export function Aggregated({
           <span>({miss})</span>
         </Spaced>
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         <Spaced>
           <Percent>
             {Number.isFinite(dodgedPercent) ? dodgedPercent.toFixed(1) + "%" : "Fehler"}
@@ -100,7 +100,7 @@ export function Aggregated({
           <span>({dodged})</span>
         </Spaced>
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         {cast > 0 ? (
           <Tooltip title={`${hit} Treffer + ${cast} erfolgreiche Rundenzauber`}>
             <TooltipText>
@@ -111,7 +111,7 @@ export function Aggregated({
           hit
         )}
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         <Spaced>
           <Percent>
             {Number.isFinite(critPercent) ? critPercent.toFixed(1) + "%" : "Fehler"}
@@ -119,7 +119,7 @@ export function Aggregated({
           <span>({crit})</span>
         </Spaced>
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         <Spaced>
           <Percent>
             {Number.isFinite(blockPercent) ? blockPercent.toFixed(1) + "%" : "Fehler"}
@@ -127,7 +127,7 @@ export function Aggregated({
           <span>({blocked})</span>
         </Spaced>
       </Cell>
-      <Cell backgroundColor={colorMap[group]}>
+      <Cell sx={{ bgcolor: colorMap[group] }}>
         <Spaced>
           <Percent>
             {Number.isFinite(parryPercent) ? parryPercent.toFixed(1) + "%" : "Fehler"}
@@ -155,7 +155,7 @@ export function Row({
   return (
     <>
       <ContentsRow key={by + expand}>
-        <Cell backgroundColor={colorMap[values.group]}>
+        <Cell sx={{ bgcolor: colorMap[values.group] }}>
           {!Array.isArray(values.children) && (
             <IconButton onClick={() => setExpand(!expand)} size="small">
               {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
@@ -165,7 +165,7 @@ export function Row({
         </Cell>
         <Header
           whiteSpace={values.group !== "weapon" ? "nowrap" : undefined}
-          backgroundColor={colorMap[values.group]}
+          sx={{ bgcolor: colorMap[values.group] }}
         >
           {by}
         </Header>

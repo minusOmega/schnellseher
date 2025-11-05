@@ -4,14 +4,16 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { parseInput } from "./reporter/reporter";
 export const buttonBarId = "button-bar";
 
-const Textarea = styled("textarea")({
+const Textarea = styled("textarea")(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper, 
+  color: theme.palette.text.primary, 
   minWidth: 229.9,
   whiteSpace: "pre",
   overflowWrap: "normal",
   marginLeft: 10,
   marginRight: 10,
   marginBottom: 5,
-});
+}));
 
 const ButtonContainer = styled("div")({
   marginLeft: 10,

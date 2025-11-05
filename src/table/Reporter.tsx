@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import {
   styled,
   IconButton,
-  Tooltip,
   Badge,
   ToggleButtonGroup,
   ToggleButton,
@@ -12,19 +11,19 @@ import {
 
 import reporter, { OrderBy, OrderFunc, OrderKey, GroupBy, orderReport } from "../reporter/reporter";
 import { ContentsRow } from "./ContentsRow";
-import { ExpanderArrow, Hash } from "./Icons";
+import { ExpanderArrow } from "./Icons";
 import { ArrowDownward, ArrowUpward, Sort } from "@mui/icons-material";
 import ButtonBarContent from "../ButtonBarContent";
 import { Row } from "./Row";
 import Loot from "./LootTable";
 
-const Table = styled("table")({
-  backgroundColor: "white",
+const Table = styled("table")(({ theme }) => ({
+  backgroundColor: theme.palette.background.default,
   display: "grid",
   gridTemplateColumns: "repeat(15,auto)",
   width: "fit-content",
   flex: "auto",
-});
+}));
 
 const Head = styled("thead")({
   display: "contents",
@@ -34,7 +33,7 @@ const Body = styled("tbody")({
   display: "contents",
 });
 
-const Column = styled("th")({
+const Column = styled("th")(({ theme }) => ({
   "&:nth-of-type(1)": { flexDirection: "column-reverse" },
   "&:nth-of-type(2)": { zIndex: 2, left: 0 },
   alignItems: "flex-start",
@@ -44,9 +43,9 @@ const Column = styled("th")({
   position: "sticky",
   userSelect: "none",
   top: 0,
-  backgroundColor: "white",
+  backgroundColor: theme.palette.background.default,
   zIndex: 1,
-});
+}));
 
 const LootTable = styled("div")({
   display: "flex",
@@ -87,7 +86,7 @@ const FilterColumn = ({
 const groupTypeMap: {
   [key: string]: { groupBy: GroupBy; type: "ausgeteilt" | "erhalten" };
 } = {
-  Participant: { groupBy: ["participant", "weapon", "target"], type: "ausgeteilt" },
+  Participant: { groupBy: ["participant", "weapon"], type: "ausgeteilt" },
   Target: { groupBy: ["target", "participant", "weapon"], type: "erhalten" },
 };
 

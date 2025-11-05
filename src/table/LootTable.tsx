@@ -13,7 +13,7 @@ const Body = styled("tbody")({
   display: "contents",
 });
 
-const Column = styled("th")({
+const Column = styled("th")(({ theme }) => ({
   "&:nth-of-type(1)": { zIndex: 2, left: 0 },
   alignItems: "flex-start",
   border: "1px solid black",
@@ -21,20 +21,14 @@ const Column = styled("th")({
   display: "flex",
   position: "sticky",
   top: 0,
-  backgroundColor: "white",
+  backgroundColor: theme.palette.background.default,
   zIndex: 1,
-});
+}));
 
 const Container = styled("div")({
   display: "flex",
   flexDirection: "column",
   margin: "8px 8px 8px 0",
-});
-
-const Name = styled("p")({
-  backgroundColor: "white",
-  border: "1px solid black",
-  margin: 0,
 });
 
 export default function LootTable({
@@ -53,7 +47,6 @@ export default function LootTable({
   const participants = Object.keys(data);
   const columns = participants.length + 1;
   const Table = styled("table")({
-    backgroundColor: "white",
     display: "grid",
     gridTemplateColumns: `repeat(${columns},auto)`,
     width: "fit-content",
@@ -82,7 +75,7 @@ export default function LootTable({
                 }
             return(
             <ContentsRow key={item + index}>
-              <Header whiteSpace="nowrap" backgroundColor="white" fontWeight={item.startsWith("#") ? "bold" : "normal"}>
+              <Header sx={{ bgcolor: 'background.default' }} whiteSpace="nowrap" fontWeight={item.startsWith("#") ? "bold" : "normal"}>
                 {item}
               </Header>
               {participants.map((participant, index) => {                              

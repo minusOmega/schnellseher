@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Discord({ size = 38, fill = "#5865F2" }) {
+export default function Discord({ size = 24, fill = "#5865F2" }) {
   return (
     <svg
       viewBox="0 0 71 55"
