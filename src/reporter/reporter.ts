@@ -594,12 +594,10 @@ function aggregate(data: Data[], [group, ...groups]: GroupBy): Report {
     .value();
 }
 
-export type OrderKey = keyof Aggregation;
-export type OrderFunc = (item: Aggregation) => OrderKey | number;
-export type Order = OrderKey | OrderFunc;
-
-export function orderReport(input: Report, order: [Order, OrderBy][] = [["dmg", "desc"]]): Report {
-  const [iteratees, orders] = unzip(order) as [Order[], OrderBy[]];
+export type OrderFunc<T> = (item: T) => keyof T | number;
+export type Order<T> = keyof T | OrderFunc<T>;
+export function orderReport(input: Report, order: [Order<Aggregation>, OrderBy][] = [["dmg", "desc"]]): Report {
+  const [iteratees, orders] = unzip(order) as [Order<Aggregation>[], OrderBy[]];
   const unsorted: [string, Group][] = Object.entries(input).map(([key, { children, ...rest }]) => [
     key,
     {

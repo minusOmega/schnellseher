@@ -9,7 +9,7 @@ import {
   Divider,
 } from "@mui/material";
 
-import reporter, { OrderBy, OrderFunc, OrderKey, GroupBy, orderReport } from "../reporter/reporter";
+import reporter, { OrderBy, OrderFunc, GroupBy, orderReport, Aggregation, Report } from "../reporter/reporter";
 import { ContentsRow } from "./ContentsRow";
 import { ExpanderArrow } from "./Icons";
 import { ArrowDownward, ArrowUpward, Sort } from "@mui/icons-material";
@@ -58,7 +58,7 @@ const FilterArrow = ({ order }: { order?: OrderBy }) => {
   return <Sort />;
 };
 
-const FilterColumn = ({
+const FilterColumn = <T,>({
   children,
   onChange,
   name,
@@ -66,11 +66,11 @@ const FilterColumn = ({
   order,
   pos,
 }: {
-  name: OrderKey;
-  func?: OrderFunc;
+  name: keyof T;
+  func?: OrderFunc<T>;
   order?: OrderBy;
   pos: number;
-  onChange: (name: OrderKey, order?: OrderFunc) => void;
+  onChange: (name: keyof T, order?: OrderFunc<T>) => void;
   children: React.ReactNode;
 }) => {
   return (
@@ -83,17 +83,99 @@ const FilterColumn = ({
   );
 };
 
+type ReportType = "ausgeteilt" | "erhalten";
+
 const groupTypeMap: {
-  [key: string]: { groupBy: GroupBy; type: "ausgeteilt" | "erhalten" };
+  [key: string]: { groupBy: GroupBy; type: ReportType };
 } = {
   Participant: { groupBy: ["participant", "weapon"], type: "ausgeteilt" },
   Target: { groupBy: ["target", "participant", "weapon"], type: "erhalten" },
 };
 
-export default function Reporter({ data }: { data: string }) {
+type Sortable<T> = { group: keyof T; by: OrderBy; func?: OrderFunc<T> }[]
+type filterProps<T> = {
+  name: keyof T;
+  func?: OrderFunc<T>;
+  order?: OrderBy;
+  pos: number;
+  onChange: (name: keyof T, func?: OrderFunc<T>) => void;
+}
+
+function filterBy<T>(name: keyof T,
+  current: Sortable<T>,
+  onChange: (name: keyof T, func?: OrderFunc<T>) => void,
+  func?: OrderFunc<T>,): filterProps<T> {
+  return {
+    name,
+    func,
+    order: current.find((s) => s.group === name)?.by,
+    pos: current.findIndex((s) => s.group === name),
+    onChange,
+  }
+}
+
+function BattleReportTable({ report, showMonster, type }: { report: Report, showMonster?: boolean, type?: ReportType }) {
   const [expand, setExpand] = useState(false);
+  const [sort, setSort] = useState<Sortable<Aggregation>>([]);
+  const memoizedData = useMemo(
+    () =>
+      orderReport(
+        report,
+        sort.map(({ by, group, func }) => [func || group, by])
+      ),
+    [report, sort]
+  );
+  const changeFilter = (group: keyof Aggregation, func?: OrderFunc<Aggregation>) => {
+    const ordered = sort.find((s) => s.group === group);
+    if (!ordered) setSort([{ group, by: "desc", func }]);
+    else if (ordered.by === "desc") setSort([{ group, by: "asc", func }]);
+    else setSort([]);
+  };
+  const filterReportBy = (name: keyof Aggregation, func?: OrderFunc<Aggregation>) => filterBy(name, sort, changeFilter, func);
+
+  return (<Table>
+    <Head>
+      <ContentsRow>
+        <Column>
+          <IconButton onClick={() => setExpand(!expand)} size="small">
+            {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
+            <ExpanderArrow expand={+expand} fontSize="small" />
+          </IconButton>
+        </Column>
+        <Column>Name</Column>
+        <Column>Runden</Column>
+        <FilterColumn {...filterReportBy("heal")}>Heilung {type}</FilterColumn>
+        <FilterColumn {...filterReportBy("dmg")}>Schaden {type} (Abgewehrt)</FilterColumn>
+        <FilterColumn {...filterReportBy("rounds", ({ dmg, rounds }) => dmg / rounds.length)}>
+          Schaden pro Runde
+        </FilterColumn>
+        <Column>min-max Schaden</Column>
+        <Column>min-max Kritisch</Column>
+        <FilterColumn {...filterReportBy("activate")}>Aktiv</FilterColumn>
+        <FilterColumn {...filterReportBy("missPercent")}>Verfehlt</FilterColumn>
+        <FilterColumn {...filterReportBy("dodgedPercent")}>Ausgewichen</FilterColumn>
+        <FilterColumn {...filterReportBy("hit")}>Treffer</FilterColumn>
+        <FilterColumn {...filterReportBy("critPercent")}>Kritisch</FilterColumn>
+        <FilterColumn {...filterReportBy("blocked")}>Blockiert</FilterColumn>
+        <FilterColumn {...filterReportBy("parried")}>Parriert</FilterColumn>
+      </ContentsRow>
+    </Head>
+    <Body>
+      {Object.entries(memoizedData).map(([by, values]) => (
+        <Row
+          key={by + expand}
+          by={by}
+          values={values}
+          isExpanded={expand}
+          showMonster={showMonster}
+        />
+      ))}
+    </Body>
+  </Table>)
+}
+
+export default function Reporter({ data }: { data: string }) {
   const [showMonster, setShowMonster] = useState(false);
-  const [sort, setSort] = useState<{ group: OrderKey; by: OrderBy; func?: OrderFunc }[]>([]);
   const [groupType, setGroupType] = React.useState<string>("Participant");
   const [showLoot, setShowLoot] = React.useState<boolean>(true);
   const [apPerRound, setApPerRound] = React.useState<number>(2);
@@ -106,42 +188,9 @@ export default function Reporter({ data }: { data: string }) {
       [data, showBattles, groupBy, showBandaging, apPerRound]
     );
 
-  const memoizedData = useMemo(
-    () =>
-      orderReport(
-        memoizedReport,
-        sort.map(({ by, group, func }) => [func || group, by])
-      ),
-    [memoizedReport, sort]
-  );
-
   const handleGroupTypeChange = (_: React.MouseEvent<HTMLElement>, next: string) => {
     if (next !== null) setGroupType(next);
   };
-
-  const changeFilter = (group: OrderKey, func?: OrderFunc) => {
-    const ordered = sort.find((s) => s.group === group);
-    if (!ordered) setSort([{ group, by: "desc", func }]);
-    else if (ordered.by === "desc") setSort([{ group, by: "asc", func }]);
-    else setSort([]);
-  };
-
-  const filterBy = (
-    name: OrderKey,
-    func?: OrderFunc
-  ): {
-    name: OrderKey;
-    func?: OrderFunc;
-    order?: OrderBy;
-    pos: number;
-    onChange: (name: OrderKey, func?: OrderFunc) => void;
-  } => ({
-    name,
-    func,
-    order: sort.find((s) => s.group === name)?.by,
-    pos: sort.findIndex((s) => s.group === name),
-    onChange: changeFilter,
-  });
 
   const GroupTypeToggle = () => (
     <ToggleButtonGroup exclusive color="primary" value={groupType} onChange={handleGroupTypeChange}>
@@ -149,16 +198,17 @@ export default function Reporter({ data }: { data: string }) {
       <ToggleButton value={"Target"}>Eingehend</ToggleButton>
     </ToggleButtonGroup>
   );
+
   const BandagingToggle = () => (
-      <ToggleButton color="primary" value={"check"} selected={showBandaging} onChange={() => setShowBandaging((prev) => !prev)}>Bandagieren</ToggleButton>
+    <ToggleButton color="primary" value={"check"} selected={showBandaging} onChange={() => setShowBandaging((prev) => !prev)}>Bandagieren</ToggleButton>
   );
 
-  const BattlesToggle = () => (    
-      <ToggleButton color="primary" value={"check"} selected={showBattles} onChange={() => setShowBattles((prev) => !prev)}>Kämpfe</ToggleButton>
+  const BattlesToggle = () => (
+    <ToggleButton color="primary" value={"check"} selected={showBattles} onChange={() => setShowBattles((prev) => !prev)}>Kämpfe</ToggleButton>
   );
 
   const LootToggle = () => (
-      <ToggleButton color="primary" value={"check"} selected={showLoot} onChange={() => setShowLoot((prev) => !prev)}>Beute</ToggleButton>
+    <ToggleButton color="primary" value={"check"} selected={showLoot} onChange={() => setShowLoot((prev) => !prev)}>Beute</ToggleButton>
   );
 
   const ExpToggle = () => (
@@ -180,7 +230,7 @@ export default function Reporter({ data }: { data: string }) {
   );
 
   const MonsterToggle = () => (
-      <ToggleButton color="primary" value={"check"} selected={showMonster} onChange={() => setShowMonster((prev) => !prev)}>Monster</ToggleButton>
+    <ToggleButton color="primary" value={"check"} selected={showMonster} onChange={() => setShowMonster((prev) => !prev)}>Monster</ToggleButton>
   );
 
   const VerticalDivider = () => (
@@ -201,59 +251,20 @@ export default function Reporter({ data }: { data: string }) {
         <Paper sx={sxFlex}>
           <BandagingToggle />
           <VerticalDivider />
-          <MonsterToggle />          
+          <MonsterToggle />
           <VerticalDivider />
           <BattlesToggle />
           <VerticalDivider />
-          <LootToggle />      
+          <LootToggle />
         </Paper>
-        <Paper sx={sxFlex}>          
+        <Paper sx={sxFlex}>
           <ExpToggle />
         </Paper>
       </ButtonBarContent>
-        {showLoot && <LootTable><Loot name="Beute" data={memorizedLoot} items={memorizedItems} /></LootTable>}
-        {showLoot && <LootTable><Loot name="Werte" data={memorizedValue} items={memorizedDescriptions} /></LootTable>}
-        {apPerRound > 1 && <LootTable><Loot name="Erfahrung" data={memorizedExp} items={memorizedInfo} expanded /></LootTable>}
-      <Table>
-        <Head>
-          <ContentsRow>
-            <Column>
-              <IconButton onClick={() => setExpand(!expand)} size="small">
-                {/* Use {+expand} to fix Received `false` for a non-boolean attribute */}
-                <ExpanderArrow expand={+expand} fontSize="small" />
-              </IconButton>
-           
-            </Column>
-            <Column>Name</Column>
-            <Column>Runden</Column>
-            <FilterColumn {...filterBy("heal")}>Heilung {type}</FilterColumn>
-            <FilterColumn {...filterBy("dmg")}>Schaden {type} (Abgewehrt)</FilterColumn>
-            <FilterColumn {...filterBy("rounds", ({ dmg, rounds }) => dmg / rounds.length)}>
-              Schaden pro Runde
-            </FilterColumn>
-            <Column>min-max Schaden</Column>
-            <Column>min-max Kritisch</Column>
-            <FilterColumn {...filterBy("activate")}>Aktiv</FilterColumn>
-            <FilterColumn {...filterBy("missPercent")}>Verfehlt</FilterColumn>
-            <FilterColumn {...filterBy("dodgedPercent")}>Ausgewichen</FilterColumn>
-            <FilterColumn {...filterBy("hit")}>Treffer</FilterColumn>
-            <FilterColumn {...filterBy("critPercent")}>Kritisch</FilterColumn>
-            <FilterColumn {...filterBy("blocked")}>Blockiert</FilterColumn>
-            <FilterColumn {...filterBy("parried")}>Parriert</FilterColumn>
-          </ContentsRow>
-        </Head>
-        <Body>
-          {Object.entries(memoizedData).map(([by, values]) => (
-            <Row
-              key={by + expand}
-              by={by}
-              values={values}
-              isExpanded={expand}
-              showMonster={showMonster}
-            />
-          ))}
-        </Body>
-      </Table>
+      {showLoot && <LootTable><Loot name="Beute" data={memorizedLoot} items={memorizedItems} /></LootTable>}
+      {showLoot && <LootTable><Loot name="Werte" data={memorizedValue} items={memorizedDescriptions} /></LootTable>}
+      {apPerRound > 1 && <LootTable><Loot name="Erfahrung" data={memorizedExp} items={memorizedInfo} expanded /></LootTable>}
+      <BattleReportTable report={memoizedReport} showMonster={showMonster} type={type} />
     </>
   );
 }
