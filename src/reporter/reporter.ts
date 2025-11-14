@@ -1,4 +1,13 @@
-import { chain, isEmpty, unzip, zipWith, orderBy, isArray, fromPairs, groupBy } from "lodash";
+import {
+  chain,
+  isEmpty,
+  unzip,
+  zipWith,
+  orderBy,
+  isArray,
+  fromPairs,
+  groupBy,
+} from "lodash";
 
 type RegexGroups = {
   time: string;
@@ -117,9 +126,10 @@ export function parseInput(input: string, showBandaging: boolean = false) {
 export type Loot = Record<string, Record<string, number>>;
 
 const participant =
-  /[A-ZÄÖÜß][a-zäöüßA-Z]+(?:(?:(?: |-)[a-zäöüßA-Z]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüßA-Z]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüßA-Z]+))?/
+  /[A-ZÄÖÜß][a-zäöüßA-Z´]+(?:(?:(?: |-)[a-zäöüßA-Z]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüßA-Z]+){0,2}(?:(?: |-)[A-ZÄÖÜß][a-zäöüßA-Z]+))?/
     .source;
-const participantOrMonsterPattern = new RegExp(`${participant}(?: #\\d+)?`).source;
+const participantOrMonsterPattern = new RegExp(`${participant}(?: #\\d+)?`)
+  .source;
 const spacer = /[ \t]+/.source;
 const lootPattern = /\d[^\t\n]*[a-z|)]/.source;
 const valuePattern = /\d* [^\n\t]*/.source;
@@ -131,57 +141,64 @@ const typPattern = /(?<=\()exzellenter Treffer|krit. Treffer(?=\))/.source;
 const blockPattern = /(?<=\()\d+(?=\sSchaden geblockt\)\.)/.source;
 const parryPattern = /(?<=\()\d+(?=\sSchaden pariert\)\.)/.source;
 
-type participantStats = {
-    name: string;
-    stufe: string;
-    status: string;
-    lp: string;
-    exp?: number;
-    round?: number;
-}
+export type ParticipantStats = {
+  name: string;
+  stufe: string;
+  status: string;
+  lp: string;
+  exp?: number;
+  round?: number;
+};
 
-function parseParticipants({ input }: Battle): Record<string, participantStats> {
-  const regex = /^\[\?\]\s+(?<name>.*?)\s+(?<stufe>\d+)\s+(?<status>\S+)(?:\s+(?<lp>\d+%(?:\s+\+\d+%)?))?(?:\s+(?<exp>\d+\.?\d+))?/gm;  
-  const results : Record<string, participantStats> = {};
+function parseParticipants({
+  input,
+}: Battle): Record<string, ParticipantStats> {
+  const regex =
+    /^\[\?\]\s+(?<name>.*?)\s+(?<stufe>\d+)\s+(?<status>\S+)(?:\s+(?<lp>\d+%(?:\s+\+\d+%)?))?(?:\s+(?<exp>\d+\.?\d+))?/gm;
+  const results: Record<string, ParticipantStats> = {};
 
   for (const match of input.matchAll(regex)) {
     if (match?.groups?.name) {
-      let participant : participantStats = {
+      let participant: ParticipantStats = {
         name: match.groups.name,
         stufe: match.groups.stufe,
         status: match.groups.status,
         lp: match.groups.lp,
-      }
-      if(match.groups.exp) participant["exp"] = parseFloat( match.groups.exp);
+      };
+      if (match.groups.exp) participant["exp"] = parseFloat(match.groups.exp);
       results[participant.name] = participant;
     }
   }
 
-  if(isEmpty(results)) return results;
+  if (isEmpty(results)) return results;
 
   let maxRound = 0;
-  for (const match of input.matchAll(/^Runde\s+(\d+)/gm)){
+  for (const match of input.matchAll(/^Runde\s+(\d+)/gm)) {
     const r = parseInt(match[1], 10);
     if (r > maxRound) maxRound = r;
   }
 
-  for (const match of input.matchAll(/^(?<time>\d+:\d\d)\s+(?<name>.+?)\s+sinkt kampfunfähig zu Boden\./gm)){
-    if(match?.groups) {
+  for (const match of input.matchAll(
+    /^(?<time>\d+:\d\d)\s+(?<name>.+?)\s+sinkt kampfunfähig zu Boden\./gm
+  )) {
+    if (match?.groups) {
       const round = parseTime(match.groups.time);
       results[match.groups.name.trim()].round = round;
     }
   }
 
-  for(const participant in results) {
-    if(!results[participant].round) results[participant].round = maxRound;
+  for (const participant in results) {
+    if (!results[participant].round) results[participant].round = maxRound;
   }
 
-  return results
+  return results;
 }
 
 function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
   let regex = new RegExp(
-    `^(?!Sieger${spacer}Beuteverteilung)(?<participant>${participant})${spacer}(?<loot>${lootPattern})\\s+(?<uvp>\\d*)(?:\\n|${spacer}(?<value>${valuePattern}))?`,"gm");
+    `^(?!Sieger${spacer}Beuteverteilung)(?<participant>${participant})${spacer}(?<loot>${lootPattern})\\s+(?<uvp>\\d*)(?:\\n|${spacer}(?<value>${valuePattern}))?`,
+    "gm"
+  );
   let match: RegExpExecArray | null;
   let collectedLoot: Loot = {};
   let collectedUVP: Loot = {};
@@ -200,25 +217,34 @@ function parseLoot({ input }: Battle): { value: Loot; loot: Loot; uvp: Loot } {
         return total;
       };
 
-      const sum = parseInt(uvp);  
-      if(Number.isNaN(sum)) {}
-      else if (collectedUVP[participant]) collectedUVP[participant][constants.uvp] = sum || 0;
+      const sum = parseInt(uvp);
+      if (Number.isNaN(sum)) {
+      } else if (collectedUVP[participant])
+        collectedUVP[participant][constants.uvp] = sum || 0;
       else collectedUVP[participant] = { [constants.uvp]: sum || 0 };
       collectedValue = (value || "")
-      .replace(/^\t+/, "")
-      .split(", ")
-      .reduce(collect, collectedValue);
+        .replace(/^\t+/, "")
+        .split(", ")
+        .reduce(collect, collectedValue);
       collectedLoot = loot.split(", ").reduce(collect, collectedLoot);
     }
   }
   return { loot: collectedLoot, value: collectedValue, uvp: collectedUVP };
 }
 
-export function parseBattles(battles: Battles, apPerRound = 2): {
+export function parseBattles(
+  battles: Battles,
+  apPerRound = 2
+): {
   groups: RawData[];
   value: [Loot, string[]];
   loot: [Loot, string[]];
   exp: [Loot, string[]];
+  participants: Record<string, ParticipantStats>;
+  defeats: Record<string, number>;
+  defeatsByKey: Record<string, number>;
+  damageBefore: Record<string, number[]>;
+  damageBeforeByKey: Record<string, number[]>;
 } {
   const SUM = "# Summe";
   const ROUNDS = "Runden";
@@ -231,13 +257,30 @@ export function parseBattles(battles: Battles, apPerRound = 2): {
   const uvps: Loot[] = [];
   const allExp: Loot[] = [];
   let rounds: number = 0;
+  const participantsAll: Record<string, ParticipantStats> = {};
+  const defeats: Record<string, number> = {};
+  const defeatsByKey: Record<string, number> = {};
+  const damageBefore: Record<string, number[]> = {};
+  const damageBeforeByKey: Record<string, number[]> = {};
   battles.forEach((battle) => {
     const { input, start } = battle;
     const { loot, value, uvp } = parseLoot(battle);
     const participants = parseParticipants(battle);
-    allExp.push(Object.fromEntries(Object.entries(participants).filter(([, stats])=> stats.exp).map(([name, stats]) => {
-      return [name, { [EXP]: stats.exp || 0, [ROUNDS]: stats.round || 0  }];
-    })));
+    for (const [name, stats] of Object.entries(participants)) {
+      if (!participantsAll[name]) participantsAll[name] = stats;
+    }
+    allExp.push(
+      Object.fromEntries(
+        Object.entries(participants)
+          .filter(([, stats]) => stats.exp)
+          .map(([name, stats]) => {
+            return [
+              name,
+              { [EXP]: stats.exp || 0, [ROUNDS]: stats.round || 0 },
+            ];
+          })
+      )
+    );
     rounds += battle.round;
     allLoot.push(loot);
     values.push(value);
@@ -246,10 +289,50 @@ export function parseBattles(battles: Battles, apPerRound = 2): {
       `(?<time>${timePattern}) (?<participant>${participantOrMonsterPattern})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (?:Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>${weaponPattern})(?:]\\s(?:[a-z]+\\s){1,2})))(?<target>${participantOrMonsterPattern})?(?:.*?: )?(?:(?:verursacht (?<damage>${numbersPattern}))|(?:heilt (?<heal>${numbersPattern})))?(?<hit>${hitPattern})?(?:\\s[a-zA-Z]+\\s\\()?(?<typ>${typPattern})?(?:.+\\()?(?:(?<block>${blockPattern})|(?<parry>${parryPattern}))?`,
       "g"
     );
+    // track cumulative damage per instance within this battle
+    const cumulative: Record<string, number> = {};
     let match: RegExpExecArray | null;
     while ((match = regex.exec(input))) {
       if (match?.groups) {
-        groups.push({ ...(match.groups as RegexGroups), start });
+        const g = { ...(match.groups as RegexGroups), start };
+        groups.push(g);
+
+        // accumulate damage/heal for the target instance
+        const targetName = (g.target || "").trim();
+        const dmg = g.damage ? parseInt(g.damage, 10) : 0;
+        const heal = g.heal ? parseInt(g.heal, 10) : 0;
+        if (targetName) {
+          if (!Number.isNaN(dmg) && dmg !== 0)
+            cumulative[targetName] = (cumulative[targetName] || 0) + dmg;
+          if (!Number.isNaN(heal) && heal !== 0)
+            cumulative[targetName] = (cumulative[targetName] || 0) - heal;
+        }
+
+        // count defeated occurrences: participant is the name that sinks
+        if (g.defeated) {
+          const name = (g.participant || "").trim();
+          if (name) {
+            const normalized = name.replace(/ #\d+$/, "");
+            // base defeats aggregated by normalized name (compat)
+            defeats[normalized] = (defeats[normalized] || 0) + 1;
+            const before = cumulative[name] || 0;
+            if (!damageBefore[normalized]) damageBefore[normalized] = [];
+            damageBefore[normalized].push(before);
+
+            // attempt to find stufe for this instance from participants map
+            const stufe =
+              participants[name] && participants[name].stufe
+                ? participants[name].stufe
+                : "";
+            const key = `${normalized}|${stufe}`;
+            defeatsByKey[key] = (defeatsByKey[key] || 0) + 1;
+            if (!damageBeforeByKey[key]) damageBeforeByKey[key] = [];
+            damageBeforeByKey[key].push(before);
+
+            // reset cumulative for this instance after defeat
+            cumulative[name] = 0;
+          }
+        }
       }
     }
   });
@@ -275,24 +358,44 @@ export function parseBattles(battles: Battles, apPerRound = 2): {
       return total;
     }, {});
 
-    if(name && !isEmpty(sum)) output[name] = sum;
+    if (name && !isEmpty(sum)) output[name] = sum;
     return [output, names];
   };
 
-  
   const loot = collect(allLoot.concat(uvps), SUM);
   const value = collect(values, SUM);
   let exp = collect(allExp);
   for (const participant in exp[0]) {
-    exp[0][participant][EXP_ROUND] = exp[0][participant][EXP] / (exp[0][participant][ROUNDS] || 1) / apPerRound;
-    if(loot[0][participant]) loot[0][participant][UVP_ROUND] = loot[0][participant][constants.uvp] / (exp[0][participant][ROUNDS] || 1) / apPerRound;
+    exp[0][participant][EXP_ROUND] =
+      exp[0][participant][EXP] /
+      (exp[0][participant][ROUNDS] || 1) /
+      apPerRound;
+    if (loot[0][participant])
+      loot[0][participant][UVP_ROUND] =
+        loot[0][participant][constants.uvp] /
+        (exp[0][participant][ROUNDS] || 1) /
+        apPerRound;
   }
-  if(loot[0][SUM]) {
-    loot[0][SUM][UVP_ROUND] = loot[0][SUM][constants.uvp] / (rounds|| 1) / (Object.entries(loot[0]).length -1) / apPerRound;
+  if (loot[0][SUM]) {
+    loot[0][SUM][UVP_ROUND] =
+      loot[0][SUM][constants.uvp] /
+      (rounds || 1) /
+      (Object.entries(loot[0]).length - 1) /
+      apPerRound;
     loot[1].push(UVP_ROUND);
   }
-  if(Object.entries(exp[0]).length > 0) exp[1].push(EXP_ROUND);
-  return { groups, value, loot, exp };
+  if (Object.entries(exp[0]).length > 0) exp[1].push(EXP_ROUND);
+  return {
+    groups,
+    value,
+    loot,
+    exp,
+    participants: participantsAll,
+    defeats,
+    defeatsByKey,
+    damageBefore,
+    damageBeforeByKey,
+  };
 }
 
 const getPredecessorIfCaster = (current: RawData, all: RawData[]) => {
@@ -315,29 +418,52 @@ export function backtrackCaster(groups: RawData[]) {
     switch (element.weapon) {
       case "Letztes Aufgebot":
       case "Vampirismus":
-        return { ...element, participant: element.target, hit: constants.noParticipant };
+        return {
+          ...element,
+          participant: element.target,
+          hit: constants.noParticipant,
+        };
       case "Bluttransfer":
-        return { ...element, participant: previous.target, hit: constants.noParticipant };
+        return {
+          ...element,
+          participant: previous.target,
+          hit: constants.noParticipant,
+        };
       case "Blutritual":
-        return { ...element, participant: previous.participant, hit: constants.noParticipant };
+        return {
+          ...element,
+          participant: previous.participant,
+          hit: constants.noParticipant,
+        };
       default:
         const predecessor = getPredecessorIfCaster(element, groups);
         if (predecessor && predecessor.participant) {
-          return { ...element, participant: predecessor.participant, hit: constants.backtracked };
+          return {
+            ...element,
+            participant: predecessor.participant,
+            hit: constants.backtracked,
+          };
         } else {
           const match = dot.find(({ time, weapon, target }) => {
             if (weapon !== element.weapon) return false;
             if (target !== element.target) return false;
             return element.time.localeCompare(time) >= 0;
           });
-          if (match) return{ ...element, participant: match.participant, hit: constants.backtracked };
+          if (match)
+            return {
+              ...element,
+              participant: match.participant,
+              hit: constants.backtracked,
+            };
           else {
-            console.error(`Cannot find participant for ${JSON.stringify(element)}`);
+            console.error(
+              `Cannot find participant for ${JSON.stringify(element)}`
+            );
           }
         }
-      }
-      return element;
-    });
+    }
+    return element;
+  });
 }
 
 export type Numbers = {
@@ -368,7 +494,9 @@ export type Data = Numbers & {
 
 function parseTime(time: string): number {
   const [minutes, seconds] = time.split(":");
-  const round = Math.floor((parseInt(minutes) * 60 + parseInt(seconds)) / 24 + 1);
+  const round = Math.floor(
+    (parseInt(minutes) * 60 + parseInt(seconds)) / 24 + 1
+  );
   return round;
 }
 
@@ -437,7 +565,8 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
         break;
     }
 
-    if (target === undefined && defeated === constants.defeated) target = participant;
+    if (target === undefined && defeated === constants.defeated)
+      target = participant;
     if (weapon === undefined) {
       if (move === constants.move) {
         weapon = constants.moveWeapon;
@@ -489,8 +618,10 @@ export type Aggregation = Numbers & {
   parryPercent: number;
 };
 
-export const groupByBattle = (rounds: Round[]) => Object.entries(groupBy(rounds, "start"));
-export const roundsToString = (rounds: Round[]) => rounds.map(({ round }) => round).join(", ");
+export const groupByBattle = (rounds: Round[]) =>
+  Object.entries(groupBy(rounds, "start"));
+export const roundsToString = (rounds: Round[]) =>
+  rounds.map(({ round }) => round).join(", ");
 
 function ignoreForTotal(current: Data): boolean {
   return current.weapon !== undefined && current.weapon.startsWith("(");
@@ -561,7 +692,8 @@ function aggregateData(values: Data[]): Aggregation {
   if (aggregated.minCrit === Infinity) aggregated.minCrit = 0;
   if (aggregated.minDmg === Infinity) aggregated.minDmg = 0;
 
-  const { attack, hit, dodged, healed, miss, crit, cast, blocked, parried } = aggregated;
+  const { attack, hit, dodged, healed, miss, crit, blocked, parried } =
+    aggregated;
   aggregated.missPercent = (miss / attack) * 100 || 0;
   aggregated.dodgedPercent = (dodged / (attack - miss)) * 100 || 0;
   aggregated.critPercent = (crit / (hit + healed)) * 100 || 0;
@@ -577,6 +709,12 @@ function aggregateData(values: Data[]): Aggregation {
 
 export type GroupBy = (keyof Data)[];
 export type OrderBy = "asc" | "desc";
+export type ReportType = "ausgeteilt" | "erhalten";
+export type Sortable<T> = {
+  group: keyof T;
+  by: OrderBy;
+  func?: OrderFunc<T>;
+}[];
 export type Group = Aggregation & {
   group: keyof Data;
   children: Report | Array<Data>;
@@ -596,15 +734,20 @@ function aggregate(data: Data[], [group, ...groups]: GroupBy): Report {
 
 export type OrderFunc<T> = (item: T) => keyof T | number;
 export type Order<T> = keyof T | OrderFunc<T>;
-export function orderReport(input: Report, order: [Order<Aggregation>, OrderBy][] = [["dmg", "desc"]]): Report {
+export function orderReport(
+  input: Report,
+  order: [Order<Aggregation>, OrderBy][] = [["dmg", "desc"]]
+): Report {
   const [iteratees, orders] = unzip(order) as [Order<Aggregation>[], OrderBy[]];
-  const unsorted: [string, Group][] = Object.entries(input).map(([key, { children, ...rest }]) => [
-    key,
-    {
-      ...rest,
-      children: isArray(children) ? children : orderReport(children, order),
-    },
-  ]);
+  const unsorted: [string, Group][] = Object.entries(input).map(
+    ([key, { children, ...rest }]) => [
+      key,
+      {
+        ...rest,
+        children: isArray(children) ? children : orderReport(children, order),
+      },
+    ]
+  );
 
   const objectEntriesIterees = zipWith(iteratees, (iteratee) =>
     typeof iteratee === "string"
@@ -621,14 +764,48 @@ export default function reporter(
   groupBy: GroupBy = ["participant", "weapon", "target"],
   showBandaging = false,
   apPerRound = 2
-): [Report, Loot, string[], Loot, string[], Loot, string[]] {
-  const { groups, loot, value, exp } = parseBattles(
-    parseInput(input, showBandaging), apPerRound
-  );
+): [
+  Report,
+  Loot,
+  string[],
+  Loot,
+  string[],
+  Loot,
+  string[],
+  Record<string, ParticipantStats>,
+  Record<string, number>,
+  Record<string, number[]>,
+  Record<string, number>,
+  Record<string, number[]>
+] {
+  const {
+    groups,
+    loot,
+    value,
+    exp,
+    participants,
+    defeats,
+    defeatsByKey,
+    damageBefore,
+    damageBeforeByKey,
+  } = parseBattles(parseInput(input, showBandaging), apPerRound);
   const [values, descriptions] = value;
   const [loots, categories] = loot;
   const [exps, info] = exp;
   const data = parseRegexGroups(backtrackCaster(groups));
   const aggregation = aggregate(data, groupBy);
-  return [aggregation, loots, categories, values, descriptions, exps, info];
+  return [
+    aggregation,
+    loots,
+    categories,
+    values,
+    descriptions,
+    exps,
+    info,
+    participants,
+    defeats,
+    damageBefore || {},
+    defeatsByKey || {},
+    damageBeforeByKey || {},
+  ];
 }

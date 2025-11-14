@@ -4,15 +4,15 @@ import { styled } from "@mui/material/styles";
 import { BattleData } from "./BattleData";
 import Reporter from "./table/Reporter";
 import logo from "./logo.png";
-import DiscordIcon from "./icons/Discord";
-import GitHubIcon from '@mui/icons-material/GitHub';
+import { DiscordIcon } from "./icons/Icons";
+import GitHubIcon from "@mui/icons-material/GitHub";
 import { createTheme, IconButton } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { cyan, teal, blue, lightBlue } from '@mui/material/colors';
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
+import { cyan, teal } from "@mui/material/colors";
 
-const ColorModeContext = React.createContext({ toggleColorMode: () => { } });
+const ColorModeContext = React.createContext({ toggleColorMode: () => {} });
 
 const Root = styled("div")(({ theme }) => ({
   color: theme.palette.text.primary,
@@ -54,24 +54,22 @@ const TopBar = styled("div")({
 });
 
 function App() {
-
-  const [mode, setMode] = React.useState<'light' | 'dark'>(() => {
+  const [mode, setMode] = React.useState<"light" | "dark">(() => {
     const stored = localStorage.getItem("mode");
-    if(stored === 'light') return stored;
-    else return 'dark';
+    if (stored === "light") return stored;
+    else return "dark";
   });
   const colorMode = React.useMemo(
     () => ({
       toggleColorMode: () => {
         setMode((prevMode) => {
-          const nextMode = (prevMode === 'light' ? 'dark' : 'light');
+          const nextMode = prevMode === "light" ? "dark" : "light";
           localStorage.setItem("mode", nextMode);
           return nextMode;
         });
-        
       },
     }),
-    [],
+    []
   );
 
   const theme = React.useMemo(
@@ -79,36 +77,36 @@ function App() {
       createTheme({
         palette: {
           mode,
-          ...(mode === 'light'
+          ...(mode === "light"
             ? {
-              // palette values for light mode
-              primary: {
-                dark: cyan[800],
-                main: cyan[600],
-                light: cyan[100],
-              },
-              secondary: {
-                dark: teal.A700,
-                main: teal.A400,
-                light: teal.A100,
-              },
-            }
+                // palette values for light mode
+                primary: {
+                  dark: cyan[800],
+                  main: cyan[600],
+                  light: cyan[100],
+                },
+                secondary: {
+                  dark: teal.A700,
+                  main: teal.A400,
+                  light: teal.A100,
+                },
+              }
             : {
-              // palette values for dark mode
-              primary: {
-                dark: cyan[900],
-                main: cyan[800],
-                light: cyan[700],
-              },
-              secondary: {
-                dark: teal[400],
-                main: teal[600],
-                light: teal[800],
-              },
-            }),
+                // palette values for dark mode
+                primary: {
+                  dark: cyan[900],
+                  main: cyan[800],
+                  light: cyan[700],
+                },
+                secondary: {
+                  dark: teal[400],
+                  main: teal[600],
+                  light: teal[800],
+                },
+              }),
         },
       }),
-    [mode],
+    [mode]
   );
 
   const [report, setReport] = useState<string | undefined>(() => {
@@ -128,8 +126,16 @@ function App() {
         <Root>
           <Nav>
             <TopBar>
-              <IconButton sx={{ ml: 1, justifySelf: "left" }} onClick={colorMode.toggleColorMode} color="inherit">
-                {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              <IconButton
+                sx={{ ml: 1, justifySelf: "left" }}
+                onClick={colorMode.toggleColorMode}
+                color="inherit"
+              >
+                {theme.palette.mode === "dark" ? (
+                  <Brightness7Icon />
+                ) : (
+                  <Brightness4Icon />
+                )}
               </IconButton>
               <div>
                 <IconButton
@@ -154,9 +160,7 @@ function App() {
             {report ? (
               <Reporter data={report} />
             ) : (
-
               <Header>Schnellseher</Header>
-
             )}
           </Main>
         </Root>
