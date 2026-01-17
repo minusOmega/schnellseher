@@ -140,6 +140,10 @@ const hitPattern = /[a-z]+\s?[A-Za-z]+?(?=\.| )/.source;
 const typPattern = /(?<=\()exzellenter Treffer|krit. Treffer(?=\))/.source;
 const blockPattern = /(?<=\()\d+(?=\sSchaden geblockt\)\.)/.source;
 const parryPattern = /(?<=\()\d+(?=\sSchaden pariert\)\.)/.source;
+let battleLinePattern = new RegExp(
+  `(?<time>${timePattern}) (?<participant>${participantOrMonsterPattern})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (?:Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>${weaponPattern})(?:]\\s(?:[a-z]+\\s){1,2})))(?<target>${participantOrMonsterPattern})?(?:.*?: )?(?:(?:verursacht (?<damage>${numbersPattern}))|(?:heilt (?<heal>${numbersPattern})))?(?<hit>${hitPattern})?(?:\\s[a-zA-Z]+\\s\\()?(?<typ>${typPattern})?(?:.+\\()?(?:(?<block>${blockPattern})|(?<parry>${parryPattern}))?`,
+  "g"
+);
 
 export type ParticipantStats = {
   name: string;
@@ -179,10 +183,51 @@ function parseParticipants({
   }
 
   for (const match of input.matchAll(
-    /^(?<time>\d+:\d\d)\s+(?<name>.+?)\s+sinkt kampfunfähig zu Boden\./gm
+    // /^(?<time>\d+:\d\d)\s+(?<name>.+?)\s+sinkt kampfunfähig zu Boden\./gm
+    /^(?<prev>.+)\r?\n(?<time>\d+:\d\d)\s+(?<name>.+?)\s+sinkt kampfunfähig zu Boden\./gm
   )) {
     if (match?.groups) {
+      const defeatedName = match.groups.name.trim();
+      console.warn(
+        `checking defeat for ${defeatedName} at ${match.groups.time}`
+      );
       const round = parseTime(match.groups.time);
+      if (toRound(parseTimeToSeconds(match.groups.time) - 1) < round) {
+        if (/Runde \d+/.test(match.groups.prev)) {
+          console.log(`defeat at round transition ${match.groups.prev}`);
+          results[defeatedName].round = round - 1;
+          continue;
+        }
+
+        let foundEarlier = false;
+        const inputBefore = input.substring(0, match.index) + match.groups.prev;
+        for (const matchTime of inputBefore.matchAll(
+          RegExp(`^${match.groups.time}\\s+.*$`, "gm")
+        )) {
+          if (!matchTime) continue;
+          const line = battleLinePattern.exec(matchTime[0]);
+          if (!line?.groups?.target) continue;
+          if (line?.groups?.target === defeatedName) {
+            foundEarlier = true;
+            console.log(
+              `found matching target for ${defeatedName}`,
+              line?.groups
+            );
+          } else {
+            console.log(
+              `${line?.groups?.target} does not match ${defeatedName}`,
+              line?.groups
+            );
+          }
+        }
+
+        if (!foundEarlier) {
+          console.log("no valid target found earlier, adjusting round");
+          results[defeatedName].round = round - 1;
+          continue;
+        }
+      }
+
       results[match.groups.name.trim()].round = round;
     }
   }
@@ -285,14 +330,10 @@ export function parseBattles(
     allLoot.push(loot);
     values.push(value);
     uvps.push(uvp);
-    let regex = new RegExp(
-      `(?<time>${timePattern}) (?<participant>${participantOrMonsterPattern})?(?: (?<move>nähert sich) | (?<defeated>sinkt kampfunfähig zu Boden)| (?<swap>wechselt in den (?:Nahkampf|Fernkampf))|(?:(?:.+)(?<weapon>${weaponPattern})(?:]\\s(?:[a-z]+\\s){1,2})))(?<target>${participantOrMonsterPattern})?(?:.*?: )?(?:(?:verursacht (?<damage>${numbersPattern}))|(?:heilt (?<heal>${numbersPattern})))?(?<hit>${hitPattern})?(?:\\s[a-zA-Z]+\\s\\()?(?<typ>${typPattern})?(?:.+\\()?(?:(?<block>${blockPattern})|(?<parry>${parryPattern}))?`,
-      "g"
-    );
     // track cumulative damage per instance within this battle
     const cumulative: Record<string, number> = {};
     let match: RegExpExecArray | null;
-    while ((match = regex.exec(input))) {
+    while ((match = battleLinePattern.exec(input))) {
       if (match?.groups) {
         const g = { ...(match.groups as RegexGroups), start };
         groups.push(g);
@@ -492,15 +533,21 @@ export type Data = Numbers & {
   start: string;
 };
 
-function parseTime(time: string): number {
+function parseTimeToSeconds(time: string): number {
   const [minutes, seconds] = time.split(":");
-  const round = Math.floor(
-    (parseInt(minutes) * 60 + parseInt(seconds)) / 24 + 1
-  );
-  return round;
+  return parseInt(minutes) * 60 + parseInt(seconds);
+}
+
+function toRound(seconds: number): number {
+  return Math.floor(seconds / 24 + 1);
+}
+
+function parseTime(time: string): number {
+  return toRound(parseTimeToSeconds(time));
 }
 
 export function parseRegexGroups(groups: RawData[]): Data[] {
+  let previousData: Data | null = null;
   return groups.map((group) => {
     let {
       time,
@@ -565,8 +612,16 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
         break;
     }
 
-    if (target === undefined && defeated === constants.defeated)
+    if (target === undefined && defeated === constants.defeated) {
       target = participant;
+      if (
+        previousData &&
+        previousData.target === participant &&
+        previousData.participant
+      ) {
+        participant = previousData.participant;
+      }
+    }
     if (weapon === undefined) {
       if (move === constants.move) {
         weapon = constants.moveWeapon;
@@ -580,7 +635,7 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       if (weapon === undefined) console.warn("undefined weapon in", group);
     }
 
-    return {
+    const data = {
       participant,
       weapon,
       target,
@@ -602,6 +657,8 @@ export function parseRegexGroups(groups: RawData[]): Data[] {
       block: parseInt(block) | 0,
       parry: parseInt(parry) | 0,
     };
+    previousData = data;
+    return data;
   });
 }
 export type Round = { id?: string; start: string; round: number };
