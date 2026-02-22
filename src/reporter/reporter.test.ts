@@ -5,6 +5,7 @@ import reporter, {
   roundsToString,
   constants,
 } from "./reporter";
+import { describe, expect, it } from "vitest";
 describe("test process cases", () => {
   it("can parse a failed buff", () => {
     const [participant, weapon] = ["Magier", "Buff"];
